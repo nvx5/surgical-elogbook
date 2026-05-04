@@ -1,0 +1,8 @@
+---
+import Layout from '../components/Layout.astro';
+import App from '../app/App.tsx';
+---
+
+<Layout title="App" description="Log in to your surgical training logbook.">
+  <App client:only="react" />
+</Layout>

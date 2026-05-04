@@ -1,0 +1,27 @@
+---
+interface Props {
+  current?: 'about' | 'legal';
+}
+const { current } = Astro.props;
+const link = 'text-sm font-semibold text-slate-600 transition hover:text-clinical-700';
+const active = 'text-clinical-700';
+---
+
+<header class="sticky top-0 z-50 border-b border-slate-200/90 bg-white/90 backdrop-blur-md supports-[backdrop-filter]:bg-white/85">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <a href="/about/" class="flex flex-wrap items-baseline gap-x-1.5 font-bold tracking-tight">
+      <span class="text-clinical-600">Surgical</span><span class="text-slate-900">eLogbook</span>
+    </a>
+    <nav class="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 sm:gap-x-6" aria-label="Marketing">
+      <a href="/about/" class:list={[link, current === 'about' && active]}>About</a>
+      <a href="/legal/" class:list={[link, current === 'legal' && active]}>Legal</a>
+      <a href="mailto:surgicalelogbook@proton.me" class={link}>Contact</a>
+      <a
+        href="/app/"
+        class="rounded-lg bg-clinical-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-clinical-700"
+      >
+        Open app
+      </a>
+    </nav>
+  </div>
+</header>

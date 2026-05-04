@@ -1,0 +1,46 @@
+---
+/** Matches in-app AppMarketingFooter for static marketing pages. */
+interface Props {
+  /** Omit About / Legal / Contact row when redundant (e.g. long About page). */
+  hideSecondaryNav?: boolean;
+}
+/** Treat only explicit boolean true as hidden (avoids Astro/HTML attribute quirks). */
+const hideSecondaryNav = Astro.props.hideSecondaryNav === true;
+---
+
+<footer class="border-t border-slate-200/90 bg-white px-4 py-10 text-center sm:px-6" role="contentinfo">
+  <p class="text-[11px] font-medium leading-snug text-slate-600">Built by surgeons, for surgeons.</p>
+  {
+    !hideSecondaryNav && (
+      <nav class="mt-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1" aria-label="Legal and information">
+        <span class="inline-flex items-center gap-x-1">
+          <a href="/about/" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 transition hover:text-clinical-700">
+            About
+          </a>
+        </span>
+        <span class="inline-flex items-center gap-x-1">
+          <span class="text-[10px] font-bold text-slate-300" aria-hidden>
+            •
+          </span>
+          <a href="/legal/" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 transition hover:text-clinical-700">
+            Legal
+          </a>
+        </span>
+        <span class="inline-flex items-center gap-x-1">
+          <span class="text-[10px] font-bold text-slate-300" aria-hidden>
+            •
+          </span>
+          <a
+            href="mailto:surgicalelogbook@proton.me"
+            class="text-[10px] font-bold uppercase tracking-wider text-slate-500 transition hover:text-clinical-700"
+          >
+            Contact
+          </a>
+        </span>
+      </nav>
+    )
+  }
+  <p class:list={['text-[11px] text-slate-400', hideSecondaryNav ? 'mt-3' : 'mt-4']}>
+    © {new Date().getFullYear()} Surgical eLogbook
+  </p>
+</footer>

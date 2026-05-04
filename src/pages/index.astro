@@ -1,0 +1,23 @@
+---
+// Root URL sends visitors straight to the app (static-friendly redirect).
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" content="0;url=/app/" />
+    <title>Redirecting…</title>
+    <link rel="canonical" href="/app/" />
+    <script is:inline>
+      location.replace('/app/');
+    </script>
+  </head>
+  <body
+    style="margin:0;font-family:system-ui,sans-serif;background:#f8fafc;color:#0f172a;padding:2rem;text-align:center"
+  >
+    <p>
+      <a href="/app/" style="color:#2563eb;font-weight:600">Open app</a>
+    </p>
+  </body>
+</html>
