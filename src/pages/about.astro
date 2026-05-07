@@ -24,11 +24,10 @@ const procedureCloud = [
 ];
 
 const img = {
-  heroDesktop: 'https://placehold.co/1240x720/e8eef7/334155/png?text=Desktop+dashboard+preview',
-  heroPhone: 'https://placehold.co/390x844/e8eef7/334155/png?text=Mobile+case+log',
-  reports: 'https://placehold.co/920x560/dbeafe/1e40af/png?text=Reports+%26+PDF',
-  caseEntry: 'https://placehold.co/920x560/ecfeff/0e7490/png?text=Quick+case+entry',
-  casesTable: 'https://placehold.co/920x560/f1f5f9/475569/png?text=Cases+table+%26+filters',
+  heroPhone: '/assets/images/iphone.png',
+  reports: '/assets/images/pdf.png',
+  caseEntry: '/assets/images/screenshot2.png',
+  casesTable: '/assets/images/screenshot1.png',
 };
 ---
 
@@ -66,24 +65,15 @@ const img = {
           </div>
         </div>
         <div class="relative flex justify-center lg:justify-end">
-          <div class="relative w-full max-w-[440px]">
+          <div class="relative w-full max-w-[480px]">
             <img
               src={img.heroPhone}
-              alt="Mobile Surgical eLogbook mockup, replace with your screenshot"
-              width={390}
-              height={844}
+              alt="Surgical eLogbook cases screen on iPhone"
+              width={603}
+              height={1192}
               loading="eager"
               decoding="async"
-              class="relative z-10 mx-auto w-[72%] max-w-[280px] rounded-[2rem] border border-slate-200/80 shadow-card-hover sm:w-[68%]"
-            />
-            <img
-              src={img.heroDesktop}
-              alt="Desktop Surgical eLogbook mockup, replace with your screenshot"
-              width={1240}
-              height={720}
-              loading="eager"
-              decoding="async"
-              class="absolute -right-4 top-1/2 hidden w-[118%] max-w-none -translate-y-1/2 rounded-xl border border-slate-200/80 shadow-card md:block md:-right-8 lg:w-[130%]"
+              class="mx-auto h-auto w-full max-w-[300px] sm:max-w-[340px]"
             />
           </div>
         </div>
@@ -102,12 +92,12 @@ const img = {
       <div class="mt-12 grid gap-8 lg:grid-cols-2 lg:gap-12 lg:items-center">
         <img
           src={img.casesTable}
-          alt="Cases list and columns, placeholder"
-          width={920}
-          height={560}
+          alt="Surgical eLogbook cases list with columns and filters"
+          width={1861}
+          height={1139}
           loading="lazy"
           decoding="async"
-          class="w-full rounded-2xl border border-slate-200/90 shadow-card"
+          class="h-auto w-full"
         />
         <div>
           <h3 class="text-xl font-bold text-slate-900">Cases at a glance: your columns, your filters</h3>
@@ -182,12 +172,12 @@ const img = {
         <div class="order-1 lg:order-2">
           <img
             src={img.reports}
-            alt="Reports PDF preferences, placeholder"
-            width={920}
-            height={560}
+            alt="Surgical eLogbook consolidation report PDF preview"
+            width={1748}
+            height={1204}
             loading="lazy"
             decoding="async"
-            class="w-full rounded-2xl border border-slate-200/90 shadow-card"
+            class="h-auto w-full"
           />
         </div>
       </div>
@@ -196,12 +186,12 @@ const img = {
         <div>
           <img
             src={img.caseEntry}
-            alt="Case entry form, placeholder"
-            width={920}
-            height={560}
+            alt="Surgical eLogbook add case form with starred defaults"
+            width={1599}
+            height={1158}
             loading="lazy"
             decoding="async"
-            class="w-full rounded-2xl border border-slate-200/90 shadow-card"
+            class="h-auto w-full"
           />
         </div>
         <div>
