@@ -69,9 +69,10 @@ npm run build
 npm run preview
 ```
 
-## Deployment (Netlify or Cloudflare Pages)
+## Deployment (Cloudflare Pages, Git integration)
 
 1. Connect the repo and set **build command** `npm run build` and **publish directory** `dist`.
+   - No `wrangler` CLI is required for this flow.
 2. Add the same `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY` in the host’s environment UI.
 3. **Supabase Auth → URL configuration:** add your production site URL and redirect URLs (e.g. `https://your-site.example/app/`).
 4. **Password reset:** under **Authentication → URL configuration**, add the same `/app/` URLs to **Redirect URLs** (including `http://localhost:4321/app/` for local dev). The app calls `resetPasswordForEmail` with `redirectTo` set to `{origin}/app/` so the recovery link returns users to the SPA, where they can set a new password.

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { initSupabase } from './supabase';
 import type { CaseRow, Preferences, UserRow, View } from './types';
@@ -13,8 +13,9 @@ import { Auth } from './components/Auth';
 import { CaseForm } from './components/CaseForm';
 import { CaseList } from './components/CaseList';
 import { AppChrome, type ChromeNavId } from './components/AppChrome';
-import { Reports } from './components/Reports';
 import { Settings } from './components/Settings';
+
+const Reports = lazy(async () => import('./components/Reports').then((module) => ({ default: module.Reports })));
 
 function mapUser(row: Record<string, unknown>): UserRow {
   return {
@@ -251,7 +252,13 @@ export default function App() {
         />
       ) : null}
       {view === 'reports' ? (
-        <Reports supabase={supabase} prefs={prefs} grade={userRow?.grade ?? null} />
+        <Suspense
+          fallback={
+            <div className="mx-auto max-w-6xl px-4 py-5 text-sm text-slate-600 sm:px-6 sm:py-6">Loading reports…</div>
+          }
+        >
+          <Reports supabase={supabase} prefs={prefs} grade={userRow?.grade ?? null} />
+        </Suspense>
       ) : null}
       {view === 'settings' ? (
         <Settings

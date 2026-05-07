@@ -1,6 +1,0 @@
-# Cloudflare Pages — static Astro output (no Workers in this repo).
-# Create a Pages project in the dashboard, or deploy with:
-#   npm run build && npx wrangler pages deploy dist --project-name=YOUR_PROJECT_NAME
-name = "elogbook"
-compatibility_date = "2025-05-02"
-pages_build_output_dir = "dist"
