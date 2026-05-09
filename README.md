@@ -4,7 +4,7 @@
 
   An operative training logbook built by surgeons, for surgeons. Capture cases in seconds, filter your experience, and generate portfolio-ready PDF reports without uploading patient data.
 
-  [![Open app](https://img.shields.io/static/v1?label=&message=Open+app&color=0369a1&style=for-the-badge)](https://YOUR_APP_URL_HERE)
+  [![Open app](https://img.shields.io/static/v1?label=&message=Open+app&color=0369a1&style=for-the-badge)](https://surgicalelogbook.com)
   
 </div>
 
