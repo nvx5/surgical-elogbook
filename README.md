@@ -60,3 +60,10 @@ This is a finished project. Contributions, issues, and feature requests are welc
 ### 📄 License
 
 See `LICENSE` in this repository.
+
+### 🔐 Security Notes (Public Deployment)
+
+- Never commit secrets (`SUPABASE_SERVICE_ROLE_KEY`, SMTP keys, provider tokens). Keep them only in host-managed environment variables.
+- Set Edge Function origin allowlist via `ALLOWED_ORIGINS` (comma-separated, e.g. `https://surgicalelogbook.com,https://www.surgicalelogbook.com`).
+- Keep Supabase Auth password policy strong (length + complexity) and enable secure password change.
+- Keep dependencies up to date and review `npm audit` before releases.

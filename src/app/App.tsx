@@ -208,6 +208,7 @@ export default function App() {
     <AppChrome
       current={view}
       userSubtitle={userSubtitle}
+      grade={userRow?.grade ?? null}
       totalCases={totalCases}
       totalCasesLoading={totalCasesLoading}
       onSignOut={signOut}

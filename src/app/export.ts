@@ -2,10 +2,12 @@ import type { CaseRow, UserRow } from './types';
 import { formatConsultant, formatOperationTags, parseConsultant } from './utils';
 
 function escapeCsvCell(value: string): string {
-  if (/[",\n\r]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
+  // Prevent CSV/Excel formula injection when exported files are opened in spreadsheet apps.
+  const guarded = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  if (/[",\n\r]/.test(guarded)) {
+    return `"${guarded.replace(/"/g, '""')}"`;
   }
-  return value;
+  return guarded;
 }
 
 function caseRowToCsvLine(row: CaseRow): string {

@@ -153,29 +153,22 @@ export function resolveSpecialty(
   return canonicalSpecialty(raw) ?? canonicalSpecialty(pref) ?? DEFAULT_SURGICAL_SPECIALTY;
 }
 
-/** Training report PDF layout (Reports screen → `buildTrainingReportPdf`). */
-export const REPORT_PDF_FORMATS = [
+/** Page orientation for training report PDFs (Reports → `buildTrainingReportPdf`). */
+export const REPORT_PDF_LAYOUTS = [
   {
-    value: 'compact' as const,
-    label: 'Compact',
+    value: 'portrait' as const,
+    label: 'Portrait',
     description:
-      'Portrait A4. Case table uses four columns only: date, operation, consultant, and role. No specialty, trust, CEPOD, or notes columns. Same trainee header and supervisor sign off as the other formats.',
+      'A4 upright. Same standardized case table as landscape (date, specialty, trust, operation, CEPOD, consultant, role — no notes), scaled to fit.',
   },
   {
-    value: 'normal' as const,
-    label: 'Normal',
-    description:
-      'Landscape A4. Table with seven columns: date, specialty, trust, operation, CEPOD, consultant, and role; no notes column. Brief role tallies print under the Role column but omit Assisted and Observed. Supervisor sign off on the last page.',
-  },
-  {
-    value: 'detailed' as const,
-    label: 'Detailed',
-    description:
-      'Landscape A4 like normal plus a notes column. Drops the small role tally under the table and instead adds a report statistics section before the supervisor sign off, with full counts for every role, specialty, trust, CEPOD category, and consultant.',
+    value: 'landscape' as const,
+    label: 'Landscape',
+    description: 'A4 sideways — more room for the same columns without tight wrapping.',
   },
 ] as const;
 
-export type ReportPdfFormat = (typeof REPORT_PDF_FORMATS)[number]['value'];
+export type ReportPdfLayout = (typeof REPORT_PDF_LAYOUTS)[number]['value'];
 
 /** jsPDF built-in font names for training reports. */
 export const REPORT_PDF_FONT_PRESETS = [

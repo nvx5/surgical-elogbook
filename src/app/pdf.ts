@@ -1,9 +1,11 @@
 import { jsPDF } from 'jspdf';
 import {
+  canonicalRole,
   DEFAULT_SURGICAL_SPECIALTY,
   REPORT_PDF_SIZE_PRESETS,
+  ROLES,
   type ReportPdfFontFamily,
-  type ReportPdfFormat,
+  type ReportPdfLayout,
   type ReportPdfSizePreset,
 } from './constants';
 import type { CaseRow, Preferences } from './types';
@@ -24,7 +26,7 @@ function formatTraineeWithBrackets(
 ): string {
   let line = formatTraineeLine(prefs);
   if (includeGrade && grade?.trim()) line += ` (${grade.trim()})`;
-  if (includeGmc && prefs.gmcNumber?.trim()) line += ` (${prefs.gmcNumber.trim()})`;
+  if (includeGmc && prefs.gmcNumber?.trim()) line += ` (GMC ${prefs.gmcNumber.trim()})`;
   return line;
 }
 
@@ -34,11 +36,13 @@ export type ReportPdfOptions = {
   cases: CaseRow[];
   dateFrom: string;
   dateTo: string;
-  format: ReportPdfFormat;
+  layout: ReportPdfLayout;
   includeGmc: boolean;
   includeGrade: boolean;
   fontFamily: ReportPdfFontFamily;
   fontSizePreset: ReportPdfSizePreset;
+  /** Extra summary page with counts by specialty and role (after the case list). Default true. */
+  includeConsolidationReport?: boolean;
   /** Extra lines printed after the period block (e.g. active filters). */
   headerNotes?: string[];
 };
@@ -54,32 +58,53 @@ const RGB_BOX_BORDER: [number, number, number] = [148, 163, 184];
 const SITE_DISPLAY = 'surgicalelogbook.com';
 const SITE_URL = 'https://surgicalelogbook.com/';
 
-/** Omit from PDF role breakdown under the table (still counted in Cases: total). */
-const ROLES_OMIT_FROM_PDF_FOOTER = new Set(['Assisted', 'Observed']);
-
-/** Space reserved below the case table for role counts (aligned under Role column). */
-const POST_TABLE_ROLE_FOOTER_MM = 28;
-
 function inRange(c: CaseRow, from: string, to: string): boolean {
   const d = c.case_date;
   return d >= from && d <= to;
 }
 
-function countByKey(cases: CaseRow[], keyFn: (c: CaseRow) => string): Record<string, number> {
-  const m: Record<string, number> = {};
-  for (const c of cases) {
-    const v = keyFn(c).trim() || '(blank)';
-    m[v] = (m[v] ?? 0) + 1;
-  }
-  return m;
-}
-
-function sortedEntries(m: Record<string, number>): [string, number][] {
-  return Object.entries(m).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-}
-
 function tableSpecialtyLabel(c: CaseRow): string {
   return c.specialty?.trim() ? c.specialty : DEFAULT_SURGICAL_SPECIALTY;
+}
+
+/** Canonical role column key, legacy free text, or null when role is unset (excluded from consolidation grid). */
+function roleBucketForCase(c: CaseRow): string | null {
+  const raw = c.role?.trim() ?? '';
+  if (!raw) return null;
+  const canon = canonicalRole(raw);
+  if (canon) return canon;
+  return raw;
+}
+
+function buildSpecialtyRoleMatrix(cases: CaseRow[]): {
+  specialties: string[];
+  roles: string[];
+  countAt: (spec: string, role: string) => number;
+} {
+  const specialties = [...new Set(cases.map(tableSpecialtyLabel))].sort((a, b) => a.localeCompare(b));
+  const standard = new Set<string>(ROLES as unknown as string[]);
+  const extras = new Set<string>();
+  for (const c of cases) {
+    const b = roleBucketForCase(c);
+    if (b !== null && !standard.has(b)) extras.add(b);
+  }
+  const roles = [...ROLES, ...[...extras].sort((a, b) => a.localeCompare(b))];
+  const grid = new Map<string, Map<string, number>>();
+  for (const sp of specialties) {
+    grid.set(sp, new Map());
+  }
+  for (const c of cases) {
+    const sp = tableSpecialtyLabel(c);
+    const r = roleBucketForCase(c);
+    const row = grid.get(sp);
+    if (!row || r === null) continue;
+    row.set(r, (row.get(r) ?? 0) + 1);
+  }
+  return {
+    specialties,
+    roles,
+    countAt: (spec, role) => grid.get(spec)?.get(role) ?? 0,
+  };
 }
 
 function scaleForPreset(preset: ReportPdfSizePreset): number {
@@ -169,7 +194,66 @@ type PdfContext = {
   g: (gap: number) => number;
 };
 
+/**
+ * Single-row supervisor strip for continuation pages (no title, no trainee declaration).
+ * Anchored so the box bottom aligns with `pageH - margin`, matching the full sign-off block.
+ */
+function drawCondensedSupervisorSignOff(ctx: PdfContext): void {
+  const { doc } = ctx;
+  const pageIdx = doc.getNumberOfPages();
+  doc.setPage(pageIdx);
+
+  const left = ctx.margin;
+  const w = ctx.pageW - ctx.margin * 2;
+  const bottom = ctx.pageH - ctx.margin;
+
+  const mFull = computeSignOffLayout(ctx);
+  const { pad, firstRowH, colGap } = mFull;
+  const innerW = w - pad * 2;
+  const gmcColW = Math.min(26, Math.max(19, innerW * 0.13));
+  const dateColW = Math.min(28, Math.max(21, innerW * 0.12));
+  const sigColW = Math.min(42, Math.max(30, innerW * 0.28));
+  const nameColW = innerW - gmcColW - dateColW - sigColW - 3 * colGap;
+
+  const boxH = pad * 2 + firstRowH;
+  const boxTop = bottom - boxH;
+
+  doc.setDrawColor(...RGB_BOX_BORDER);
+  doc.setLineWidth(0.45);
+  doc.rect(left, boxTop, w, boxH, 'S');
+
+  const iy = boxTop + pad;
+  const labelY = iy + ctx.s(8.5) * 0.34;
+  const x0 = left + pad;
+  let cx = x0;
+
+  doc.setFont(ctx.fontFamily, 'normal');
+  doc.setTextColor(...RGB_MUTED);
+  doc.setFontSize(ctx.s(8.5));
+  doc.text('Name', cx, labelY);
+  cx += nameColW + colGap;
+  doc.setFontSize(ctx.s(7.8));
+  doc.text('GMC', cx, labelY);
+  cx += gmcColW + colGap;
+  doc.text('Date', cx, labelY);
+  cx += dateColW + colGap;
+  doc.text('Signature', cx, labelY);
+
+  const lineY = iy + firstRowH - 1.25;
+  doc.setDrawColor(...RGB_BORDER);
+  doc.setLineWidth(0.28);
+  cx = x0;
+  doc.line(cx, lineY, cx + nameColW, lineY);
+  cx += nameColW + colGap;
+  doc.line(cx, lineY, cx + gmcColW, lineY);
+  cx += gmcColW + colGap;
+  doc.line(cx, lineY, cx + dateColW, lineY);
+  cx += dateColW + colGap;
+  doc.line(cx, lineY, cx + sigColW, lineY);
+}
+
 function newPage(ctx: PdfContext): number {
+  drawCondensedSupervisorSignOff(ctx);
   ctx.doc.addPage();
   return ctx.margin;
 }
@@ -381,6 +465,14 @@ type CaseTableColumnFlags = {
   includeCepod: boolean;
 };
 
+/** Standard consolidation table: date, specialty, trust, operation, CEPOD, consultant, role — no notes. */
+const STANDARD_REPORT_COLUMN_FLAGS: CaseTableColumnFlags = {
+  includeNotes: false,
+  includeTrust: true,
+  includeSpecialty: true,
+  includeCepod: true,
+};
+
 function buildCaseTableColumns(tableWidth: number, flags: CaseTableColumnFlags): TableCol[] {
   const { includeNotes, includeTrust, includeSpecialty, includeCepod } = flags;
   const compactish = !includeTrust && !includeSpecialty && !includeCepod && !includeNotes;
@@ -421,9 +513,6 @@ function drawCaseTable(
   tableWidth: number,
   columnFlags: CaseTableColumnFlags,
   signOffReserveMm: number,
-  postTableRoleFooterMm: number,
-  /** Short role counts under the Role column (omitted when detailed stats section lists roles). */
-  includeRoleColumnFooter: boolean,
 ): number {
   const { doc } = ctx;
   const cols = buildCaseTableColumns(tableWidth, columnFlags);
@@ -431,7 +520,7 @@ function drawCaseTable(
   const bodySize = ctx.s(6.2);
   const headSize = ctx.s(6.5);
   let y = yStart;
-  const maxBottom = tableContentMaxBottom(ctx, signOffReserveMm + postTableRoleFooterMm);
+  const maxBottom = tableContentMaxBottom(ctx, signOffReserveMm);
 
   const x0 = ctx.margin;
   const colWidths = cols.map((c) => c.w);
@@ -469,161 +558,161 @@ function drawCaseTable(
     y += drawRow(cellLines, false, false);
   }
 
-  const roleIdx = cols.findIndex((c) => c.header === 'Role');
-  if (roleIdx >= 0 && includeRoleColumnFooter) {
-    let xRoleCol = x0;
-    for (let i = 0; i < roleIdx; i++) {
-      xRoleCol += cols[i]!.w;
-    }
-    const roleColW = cols[roleIdx]!.w;
-    const textW = Math.max(4, roleColW - pad * 2);
-
-    y += ctx.g(2.5);
-    doc.setFont(ctx.fontFamily, 'normal');
-    doc.setFontSize(ctx.s(6.8));
-    doc.setTextColor(...RGB_MUTED);
-    const roleEntries = sortedEntries(countByKey(cases, (c) => c.role)).filter(
-      ([roleLabel]) => !ROLES_OMIT_FROM_PDF_FOOTER.has(roleLabel),
-    );
-    for (const [roleLabel, n] of roleEntries) {
-      const lines = doc.splitTextToSize(`${roleLabel}: ${n}`, textW);
-      for (const ln of lines) {
-        doc.text(ln, xRoleCol + pad, y);
-        y += ctx.g(3.5);
-      }
-    }
-  }
-
   return y;
 }
 
 /**
- * Full breakdowns for detailed PDFs as grid tables matching the case table look (paginates if needed).
+ * Specialty × role case counts on a fresh section (caller should start on a new page when needed).
+ * Same trainee/header block as the case-list pages, then the consolidation title and table.
+ * Repeats column headers after each internal page break (header block is not repeated on those pages).
  */
-function drawDetailedReportStatsSection(
+function drawConsolidationReport(
   ctx: PdfContext,
   cases: CaseRow[],
   yStart: number,
   signOffReserveMm: number,
+  prefs: Preferences,
+  grade: string | null,
+  dateFrom: string,
+  dateTo: string,
+  includeGmc: boolean,
+  includeGrade: boolean,
+  headerNotes: string[],
+  casesInRange: CaseRow[],
 ): number {
+  const { specialties, roles, countAt } = buildSpecialtyRoleMatrix(cases);
+  if (specialties.length === 0 || roles.length === 0) return yStart;
+
   const { doc } = ctx;
+  let y = drawReportHeader(
+    ctx,
+    prefs,
+    grade,
+    dateFrom,
+    dateTo,
+    includeGmc,
+    includeGrade,
+    headerNotes,
+    casesInRange,
+    yStart,
+  );
+
   const tableW = ctx.pageW - ctx.margin * 2;
   const x0 = ctx.margin;
-  const maxBottom = tableContentMaxBottom(ctx, signOffReserveMm);
   const pad = PDF_TABLE_CELL_PAD;
   const bodySize = ctx.s(6.2);
   const headSize = ctx.s(6.5);
-  const wLabel = tableW * 0.72;
-  const wCount = tableW - wLabel;
-  const innerLabel = Math.max(8, wLabel - pad * 2);
-  const innerCount = Math.max(6, wCount - pad * 2);
 
-  let y = yStart + ctx.g(5);
-  let openAfterNewPage = false;
+  const maxBottom = () => tableContentMaxBottom(ctx, signOffReserveMm);
 
-  function ensureRowFits(cellLines: string[][], isHeader: boolean): void {
-    const h = pdfGridRowHeight(doc, cellLines, isHeader, pad, bodySize, headSize);
-    if (y + h > maxBottom) {
-      y = newPage(ctx);
-      openAfterNewPage = true;
-    }
+  const wSpec = Math.min(58, Math.max(36, tableW * 0.27));
+  const colWidths: number[] = [wSpec];
+  const eachRoleW = (tableW - wSpec) / roles.length;
+  for (let i = 0; i < roles.length; i++) {
+    colWidths.push(eachRoleW);
+  }
+  colWidths[colWidths.length - 1]! += tableW - colWidths.reduce((a, b) => a + b, 0);
+
+  function rowHeightLines(lines: string[][], isHeader: boolean): number {
+    return pdfGridRowHeight(doc, lines, isHeader, pad, bodySize, headSize);
   }
 
-  function pushRow(
-    widths: number[],
-    lines: string[][],
-    isHeader: boolean,
-    wantTopEdge: boolean,
-  ): void {
-    ensureRowFits(lines, isHeader);
-    const drawTop = wantTopEdge || openAfterNewPage;
-    openAfterNewPage = false;
-    y += drawPdfGridRow(ctx, x0, y, tableW, widths, lines, {
-      isHeader,
-      drawTopEdge: drawTop,
+  function emitTitle(): void {
+    const titleLineH = ctx.g(9);
+    const gapBelowTitle = ctx.g(6);
+    const blockH = titleLineH + gapBelowTitle;
+    while (y + blockH > maxBottom()) {
+      y = newPage(ctx);
+    }
+    doc.setFont(ctx.fontFamily, 'bold');
+    doc.setFontSize(ctx.s(12));
+    doc.setTextColor(...RGB_SLATE);
+    doc.text('Consolidation report', x0, y + ctx.s(12) * 0.85);
+    y += blockH;
+  }
+
+  function headerLines(): string[][] {
+    const innerSpec = Math.max(6, wSpec - pad * 2);
+    const lines: string[][] = [doc.splitTextToSize('Specialty', innerSpec)];
+    for (let i = 0; i < roles.length; i++) {
+      const cw = colWidths[i + 1]!;
+      lines.push(doc.splitTextToSize(roles[i]!, Math.max(4, cw - pad * 2)));
+    }
+    return lines;
+  }
+
+  function emitColumnHeader(drawTopEdge: boolean): void {
+    const lines = headerLines();
+    const h = rowHeightLines(lines, true);
+    while (y + h > maxBottom()) {
+      y = newPage(ctx);
+    }
+    y += drawPdfGridRow(ctx, x0, y, tableW, colWidths, lines, {
+      isHeader: true,
+      drawTopEdge: drawTopEdge,
       pad,
       bodySize,
       headSize,
     });
   }
 
-  doc.setFont(ctx.fontFamily, 'normal');
+  emitTitle();
+  emitColumnHeader(true);
 
-  pushRow(
-    [tableW],
-    [doc.splitTextToSize('Report statistics', tableW - pad * 2)],
-    true,
-    true,
-  );
-  pushRow(
-    [wLabel, wCount],
-    [
-      doc.splitTextToSize('Measure', innerLabel),
-      doc.splitTextToSize('Cases', innerCount),
-    ],
-    true,
-    false,
-  );
-  pushRow(
-    [wLabel, wCount],
-    [
-      doc.splitTextToSize('Total cases in this report', innerLabel),
-      doc.splitTextToSize(String(cases.length), innerCount),
-    ],
-    false,
-    false,
-  );
-
-  function dimTable(banner: string, leftHeader: string, entries: [string, number][]) {
-    y += ctx.g(4);
-    pushRow([tableW], [doc.splitTextToSize(banner, tableW - pad * 2)], true, true);
-    pushRow(
-      [wLabel, wCount],
-      [
-        doc.splitTextToSize(leftHeader, innerLabel),
-        doc.splitTextToSize('Cases', innerCount),
-      ],
-      true,
-      false,
-    );
-    for (const [label, n] of entries) {
-      pushRow(
-        [wLabel, wCount],
-        [doc.splitTextToSize(label, innerLabel), doc.splitTextToSize(String(n), innerCount)],
-        false,
-        false,
-      );
+  for (const spec of specialties) {
+    const innerSpec = Math.max(6, wSpec - pad * 2);
+    const lines: string[][] = [doc.splitTextToSize(spec, innerSpec)];
+    for (let i = 0; i < roles.length; i++) {
+      const cw = colWidths[i + 1]!;
+      const inner = Math.max(4, cw - pad * 2);
+      const n = countAt(spec, roles[i]!);
+      lines.push(doc.splitTextToSize(String(n), inner));
     }
+    const h = rowHeightLines(lines, false);
+    while (y + h > maxBottom()) {
+      y = newPage(ctx);
+      emitColumnHeader(true);
+    }
+    y += drawPdfGridRow(ctx, x0, y, tableW, colWidths, lines, {
+      isHeader: false,
+      drawTopEdge: false,
+      pad,
+      bodySize,
+      headSize,
+    });
   }
 
-  dimTable('Cases by role', 'Role', sortedEntries(countByKey(cases, (c) => c.role?.trim() || '(blank)')));
-
-  dimTable('Cases by specialty', 'Specialty', sortedEntries(countByKey(cases, tableSpecialtyLabel)));
-
-  dimTable(
-    'Cases by trust',
-    'Trust',
-    sortedEntries(countByKey(cases, (c) => (c.hospital?.trim() ? c.hospital.trim() : '(not recorded)'))),
+  const innerSpec = Math.max(6, wSpec - pad * 2);
+  const roleTotals = roles.map((role) =>
+    specialties.reduce((sum, spec) => sum + countAt(spec, role), 0),
   );
+  const totalLines: string[][] = [
+    doc.splitTextToSize(`Total (${cases.length})`, innerSpec),
+    ...roleTotals.map((n, i) => {
+      const cw = colWidths[i + 1]!;
+      const inner = Math.max(4, cw - pad * 2);
+      return doc.splitTextToSize(String(n), inner);
+    }),
+  ];
+  const totalH = rowHeightLines(totalLines, false);
+  while (y + totalH > maxBottom()) {
+    y = newPage(ctx);
+    emitColumnHeader(true);
+  }
+  y += drawPdfGridRow(ctx, x0, y, tableW, colWidths, totalLines, {
+    isHeader: false,
+    drawTopEdge: false,
+    pad,
+    bodySize,
+    headSize,
+  });
 
-  dimTable(
-    'Cases by CEPOD',
-    'CEPOD',
-    sortedEntries(countByKey(cases, (c) => (c.cepod?.trim() ? c.cepod.trim() : '(not recorded)'))),
-  );
-
-  dimTable(
-    'Cases by consultant',
-    'Consultant',
-    sortedEntries(countByKey(cases, (c) => formatConsultant(parseConsultant(c.consultant)))),
-  );
-
-  y += ctx.g(3);
   return y;
 }
 
 /**
- * Declaration + compact supervisor sign-off in a stroked box, anchored to the bottom of the **current** (last) page.
+ * Trainee declaration + full supervisor sign-off (title, name/GMC/role/date row, signature + comments panels).
+ * Final page only; continuation pages use the condensed strip drawn inside `newPage` before `addPage`.
  */
 function drawSignOffAtPageBottom(ctx: PdfContext): void {
   const { doc } = ctx;
@@ -723,11 +812,12 @@ export function buildTrainingReportPdf(opts: ReportPdfOptions): void {
     cases,
     dateFrom,
     dateTo,
-    format,
+    layout,
     includeGmc,
     includeGrade,
     fontFamily,
     fontSizePreset,
+    includeConsolidationReport = true,
     headerNotes = [],
   } = opts;
   const filtered = cases.filter((c) => inRange(c, dateFrom, dateTo));
@@ -737,7 +827,7 @@ export function buildTrainingReportPdf(opts: ReportPdfOptions): void {
   const s = (pt: number) => Math.max(6, Math.round(pt * scale * 10) / 10);
   const g = (gap: number) => Math.max(2.8, Math.round(gap * scale * 10) / 10);
 
-  const useLandscape = format === 'normal' || format === 'detailed';
+  const useLandscape = layout === 'landscape';
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: useLandscape ? 'landscape' : 'portrait' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -751,48 +841,30 @@ export function buildTrainingReportPdf(opts: ReportPdfOptions): void {
 
   y = drawReportHeader(ctx, prefs, grade, dateFrom, dateTo, includeGmc, includeGrade, headerNotes, filtered, y);
 
-  if (format === 'normal' || format === 'detailed' || format === 'compact') {
-    const postTableMm = format === 'detailed' ? 0 : POST_TABLE_ROLE_FOOTER_MM;
-    const tableFloorReserve = signOffReserveMm + postTableMm;
-    const minTableHead = 14;
-    if (y + minTableHead > tableContentMaxBottom(ctx, tableFloorReserve)) {
-      y = newPage(ctx);
-    }
-    const tableW = pageW - margin * 2;
-    const columnFlags: CaseTableColumnFlags =
-      format === 'compact'
-        ? {
-            includeNotes: false,
-            includeTrust: false,
-            includeSpecialty: false,
-            includeCepod: false,
-          }
-        : format === 'detailed'
-          ? {
-              includeNotes: true,
-              includeTrust: true,
-              includeSpecialty: true,
-              includeCepod: true,
-            }
-          : {
-              includeNotes: false,
-              includeTrust: true,
-              includeSpecialty: true,
-              includeCepod: true,
-            };
-    const yAfterTable = drawCaseTable(
+  const tableFloorReserve = signOffReserveMm;
+  const minTableHead = 14;
+  if (y + minTableHead > tableContentMaxBottom(ctx, tableFloorReserve)) {
+    y = newPage(ctx);
+  }
+  const tableW = pageW - margin * 2;
+  drawCaseTable(ctx, sorted, y, tableW, STANDARD_REPORT_COLUMN_FLAGS, signOffReserveMm);
+
+  if (includeConsolidationReport && sorted.length > 0) {
+    const yConsolidation = newPage(ctx);
+    drawConsolidationReport(
       ctx,
       sorted,
-      y,
-      tableW,
-      columnFlags,
+      yConsolidation,
       signOffReserveMm,
-      postTableMm,
-      format !== 'detailed',
+      prefs,
+      grade,
+      dateFrom,
+      dateTo,
+      includeGmc,
+      includeGrade,
+      headerNotes,
+      filtered,
     );
-    if (format === 'detailed') {
-      drawDetailedReportStatsSection(ctx, sorted, yAfterTable, signOffReserveMm);
-    }
   }
 
   drawSignOffAtPageBottom(ctx);

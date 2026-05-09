@@ -22,15 +22,14 @@ const inputClass =
 
 const footerLinks: readonly [string, string][] = [
   ['About', '/about/'],
-  ['Legal', '/legal/'],
-  ['Contact', 'mailto:surgicalelogbook@proton.me'],
+  ['Help', '/help/'],
 ];
 
 function AuthIntegratedFooter() {
   return (
     <div className="mt-8 text-center">
       <p className="text-[11px] font-medium leading-snug text-slate-600">Built by surgeons, for surgeons.</p>
-      <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1" aria-label="Legal and information">
+      <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1" aria-label="Help and information">
         {footerLinks.map(([label, href], i) => (
           <span key={href} className="inline-flex items-center gap-x-1">
             {i > 0 ? (

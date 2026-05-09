@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { cstPortfolioIndicatorFromCaseCount, gradeShowsCstPortfolioCaseBand } from '../cstPortfolioIndicator';
 import type { View } from '../types';
 import { AppMarketingFooter } from './AppMarketingFooter';
 
@@ -10,6 +11,8 @@ type Props = {
   onNavigate: (v: ChromeNavId) => void;
   /** Name and grade on one line (shown in uppercase like the old training-log line). */
   userSubtitle: string;
+  /** Profile training grade; CST case band in the header only for Medical student / FY1 / FY2. */
+  grade: string | null;
   totalCases: number | null;
   totalCasesLoading: boolean;
   onSignOut: () => void;
@@ -81,13 +84,19 @@ export function AppChrome({
   current,
   onNavigate,
   userSubtitle,
+  grade,
   totalCases,
   totalCasesLoading,
   onSignOut,
   children,
 }: Props) {
+  const showCstCaseBand = gradeShowsCstPortfolioCaseBand(grade);
   const totalLabel =
-    totalCasesLoading || totalCases == null ? '…' : `${totalCases.toLocaleString()} ${totalCases === 1 ? 'case' : 'cases'}`;
+    totalCasesLoading || totalCases == null
+      ? '…'
+      : showCstCaseBand
+        ? `${totalCases.toLocaleString()} ${totalCases === 1 ? 'case' : 'cases'} (${cstPortfolioIndicatorFromCaseCount(totalCases)})`
+        : `${totalCases.toLocaleString()} ${totalCases === 1 ? 'case' : 'cases'}`;
 
   return (
     <div className="flex min-h-screen flex-col bg-surface text-slate-900">
@@ -108,11 +117,15 @@ export function AppChrome({
             </div>
             <div className="flex h-11 shrink-0 items-stretch gap-2 sm:gap-2.5">
               <div
-                className="flex min-w-[6.75rem] flex-col justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 tabular-nums sm:min-w-[7.25rem] sm:px-3.5"
-                title="Total cases in your logbook"
+                className="flex min-w-[7.5rem] flex-col justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 tabular-nums sm:min-w-[8.5rem] sm:px-3.5"
+                title={
+                  showCstCaseBand
+                    ? 'Total cases in your logbook; CST portfolio indicator band by count (see Help)'
+                    : 'Total cases in your logbook'
+                }
               >
                 <span className="text-[10px] font-bold uppercase leading-none tracking-wider text-slate-400">Total</span>
-                <span className="mt-0.5 text-sm font-bold leading-none text-slate-900">{totalLabel}</span>
+                <span className="mt-0.5 whitespace-nowrap text-sm font-bold leading-none text-slate-900">{totalLabel}</span>
               </div>
               <button
                 type="button"

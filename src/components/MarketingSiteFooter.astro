@@ -1,7 +1,7 @@
 ---
 /** Matches in-app AppMarketingFooter for static marketing pages. */
 interface Props {
-  /** Omit About / Legal / Contact row when redundant (e.g. long About page). */
+  /** Omit About / Help row when redundant (e.g. long About page). */
   hideSecondaryNav?: boolean;
 }
 /** Treat only explicit boolean true as hidden (avoids Astro/HTML attribute quirks). */
@@ -12,7 +12,7 @@ const hideSecondaryNav = Astro.props.hideSecondaryNav === true;
   <p class="text-[11px] font-medium leading-snug text-slate-600">Built by surgeons, for surgeons.</p>
   {
     !hideSecondaryNav && (
-      <nav class="mt-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1" aria-label="Legal and information">
+      <nav class="mt-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1" aria-label="Help and information">
         <span class="inline-flex items-center gap-x-1">
           <a href="/about/" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 transition hover:text-clinical-700">
             About
@@ -22,19 +22,8 @@ const hideSecondaryNav = Astro.props.hideSecondaryNav === true;
           <span class="text-[10px] font-bold text-slate-300" aria-hidden>
             •
           </span>
-          <a href="/legal/" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 transition hover:text-clinical-700">
-            Legal
-          </a>
-        </span>
-        <span class="inline-flex items-center gap-x-1">
-          <span class="text-[10px] font-bold text-slate-300" aria-hidden>
-            •
-          </span>
-          <a
-            href="mailto:surgicalelogbook@proton.me"
-            class="text-[10px] font-bold uppercase tracking-wider text-slate-500 transition hover:text-clinical-700"
-          >
-            Contact
+          <a href="/help/" class="text-[10px] font-bold uppercase tracking-wider text-slate-500 transition hover:text-clinical-700">
+            Help
           </a>
         </span>
       </nav>

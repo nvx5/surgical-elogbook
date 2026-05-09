@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   REPORT_PDF_FONT_PRESETS,
-  REPORT_PDF_FORMATS,
+  REPORT_PDF_LAYOUTS,
   REPORT_PDF_SIZE_PRESETS,
   SURGICAL_SPECIALTIES,
   type ReportPdfFontFamily,
-  type ReportPdfFormat,
+  type ReportPdfLayout,
   type ReportPdfSizePreset,
 } from '../constants';
 import { buildTrainingReportPdf } from '../pdf';
@@ -34,9 +34,10 @@ export function Reports({ supabase, prefs, grade }: Props) {
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(today);
   const [specialty, setSpecialty] = useState('');
-  const [format, setFormat] = useState<ReportPdfFormat>('normal');
+  const [layout, setLayout] = useState<ReportPdfLayout>('landscape');
   const [includeGmc, setIncludeGmc] = useState(true);
   const [includeGrade, setIncludeGrade] = useState(true);
+  const [includeConsolidationReport, setIncludeConsolidationReport] = useState(true);
   const [fontFamily, setFontFamily] = useState<ReportPdfFontFamily>('helvetica');
   const [fontSizePreset, setFontSizePreset] = useState<ReportPdfSizePreset>('medium');
   const [busy, setBusy] = useState(false);
@@ -101,9 +102,10 @@ export function Reports({ supabase, prefs, grade }: Props) {
         cases: rows,
         dateFrom: from,
         dateTo: to,
-        format,
+        layout,
         includeGmc,
         includeGrade,
+        includeConsolidationReport,
         fontFamily,
         fontSizePreset,
         headerNotes,
@@ -227,19 +229,19 @@ export function Reports({ supabase, prefs, grade }: Props) {
       <div className="mt-4 space-y-4 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-card sm:p-5">
         <h2 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PDF preferences</h2>
         <div>
-          <span className="text-xs font-medium text-slate-600">Format</span>
+          <span className="text-xs font-medium text-slate-600">Layout</span>
           <div className="mt-2 space-y-2">
-            {REPORT_PDF_FORMATS.map((opt) => (
+            {REPORT_PDF_LAYOUTS.map((opt) => (
               <label
                 key={opt.value}
                 className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 px-3 py-2.5 text-sm transition has-[:checked]:border-clinical-500 has-[:checked]:bg-clinical-50 has-[:checked]:shadow-sm"
               >
                 <input
                   type="radio"
-                  name="report-pdf-format"
+                  name="report-pdf-layout"
                   className="mt-0.5 shrink-0"
-                  checked={format === opt.value}
-                  onChange={() => setFormat(opt.value)}
+                  checked={layout === opt.value}
+                  onChange={() => setLayout(opt.value)}
                 />
                 <span className="min-w-0">
                   <span className="block font-semibold text-slate-900">{opt.label}</span>
@@ -275,6 +277,20 @@ export function Reports({ supabase, prefs, grade }: Props) {
               <span className="min-w-0 leading-snug">
                 <span className="block font-semibold text-slate-900">Include grade</span>
                 <span className="mt-0.5 block text-xs font-normal text-slate-600">Your training grade from your profile.</span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 px-3 py-2.5 text-sm transition has-[:checked]:border-clinical-500 has-[:checked]:bg-clinical-50">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-clinical-600 focus:ring-clinical-500"
+                checked={includeConsolidationReport}
+                onChange={(e) => setIncludeConsolidationReport(e.target.checked)}
+              />
+              <span className="min-w-0 leading-snug">
+                <span className="block font-semibold text-slate-900">Include consolidation report</span>
+                <span className="mt-0.5 block text-xs font-normal text-slate-600">
+                  Adds a separate page with case counts by specialty and role (when there are cases in the download).
+                </span>
               </span>
             </label>
           </div>

@@ -1,6 +1,6 @@
 ---
 interface Props {
-  current?: 'about' | 'legal';
+  current?: 'about' | 'help';
 }
 const { current } = Astro.props;
 const link = 'text-sm font-semibold text-slate-600 transition hover:text-clinical-700';
@@ -14,8 +14,7 @@ const active = 'text-clinical-700';
     </a>
     <nav class="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 sm:gap-x-6" aria-label="Marketing">
       <a href="/about/" class:list={[link, current === 'about' && active]}>About</a>
-      <a href="/legal/" class:list={[link, current === 'legal' && active]}>Legal</a>
-      <a href="mailto:surgicalelogbook@proton.me" class={link}>Contact</a>
+      <a href="/help/" class:list={[link, current === 'help' && active]}>Help</a>
       <a
         href="/app/"
         class="rounded-lg bg-clinical-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-clinical-700"

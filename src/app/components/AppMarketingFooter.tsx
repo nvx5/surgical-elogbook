@@ -1,9 +1,8 @@
-/** Legal / marketing footer: shown under the signed-in shell and on the auth screen. */
+/** Help / marketing footer: shown under the signed-in shell and on the auth screen. */
 export function AppMarketingFooter() {
   const links: readonly [string, string][] = [
     ['About', '/about/'],
-    ['Legal', '/legal/'],
-    ['Contact', 'mailto:surgicalelogbook@proton.me'],
+    ['Help', '/help/'],
   ];
 
   return (
@@ -12,7 +11,7 @@ export function AppMarketingFooter() {
       role="contentinfo"
     >
       <p className="text-[11px] font-medium leading-snug text-slate-600">Built by surgeons, for surgeons.</p>
-      <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1" aria-label="Legal and information">
+      <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1" aria-label="Help and information">
         {links.map(([label, href], i) => (
           <span key={href} className="inline-flex items-center gap-x-1">
             {i > 0 ? (

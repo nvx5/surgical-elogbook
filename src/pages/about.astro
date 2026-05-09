@@ -5,23 +5,129 @@ import MarketingSiteFooter from '../components/MarketingSiteFooter.astro';
 
 const title = 'Surgical eLogbook';
 const description =
-  'The operative training logbook built by surgeons, for surgeons: fast case entry, consolidation reports, and privacy first design.';
+  'Always-free operative training logbook built by surgeons, for surgeons: open-source, fast case entry, consolidation reports, and privacy-first design.';
 
-/** Showcase pills (SEO rich procedure vocabulary). */
+/** Showcase pills (SEO rich procedure vocabulary). Duplicated in the marquee for a seamless loop. */
 const procedureCloud = [
   'Appendicectomy',
+  'Laparoscopic appendicectomy',
   'Laparotomy',
-  'Cholecystectomy',
-  'EVAR',
-  'Inguinal hernia repair',
   'Diagnostic laparoscopy',
-  'Thyroidectomy',
-  'Wound debridement',
+  'Diagnostic laparoscopy + adhesiolysis',
+  'Cholecystectomy',
+  'Laparoscopic cholecystectomy',
+  'Open cholecystectomy',
+  'CBD exploration',
+  'ERCP',
+  'ERCP + stent',
+  'OGD + biopsy',
+  'OGD variceal banding',
+  'Colonoscopy',
+  'Colonoscopy + polypectomy',
+  'Flexible sigmoidoscopy',
   'Right hemicolectomy',
-  'Chest drain',
-  'Total hip replacement',
+  'Extended right hemicolectomy',
+  'Left hemicolectomy',
+  'Anterior resection',
+  'Low anterior resection',
+  'Abdominoperineal resection',
+  'Hartmann procedure',
+  'Loop ileostomy',
+  'Ileostomy reversal',
+  'Small bowel resection',
+  'Incision & drainage abscess',
+  'Wound debridement',
+  'Damage control laparotomy',
+  'Trauma laparotomy',
+  'EVAR',
+  'Open AAA repair',
+  'Femoral endarterectomy',
+  'Femoral embolectomy',
+  'Varicose vein surgery',
+  'Radiofrequency vein ablation',
+  'AV fistula formation',
+  'Temporary dialysis catheter',
+  'Inguinal hernia repair',
+  'Lichtenstein repair',
+  'TAPP inguinal hernia',
+  'TEP inguinal hernia',
+  'Femoral hernia repair',
+  'Umbilical hernia repair',
+  'Incisional hernia repair',
+  'Paraumbilical hernia repair',
+  'Fundoplication',
+  'Laparoscopic fundoplication',
+  'Splenectomy',
+  'Distal pancreatectomy',
+  'Whipple procedure',
+  'Liver segmentectomy',
+  'Open liver biopsy',
+  'Gastrectomy',
+  'Gastrotomy repair',
+  'Thyroidectomy',
+  'Hemithyroidectomy',
+  'Parathyroidectomy',
+  'Modified radical neck dissection',
+  'Central neck dissection',
   'Tracheostomy',
+  'Microlaryngoscopy',
+  'Tonsillectomy',
+  'Septoplasty',
+  'FESS',
+  'Mastectomy',
+  'Wide local excision breast',
+  'Sentinel node biopsy breast',
+  'Axillary node clearance',
+  'Chest drain (Seldinger)',
+  'Chest drain (surgical)',
+  'Needle thoracostomy',
+  'VATS wedge resection',
+  'VATS pleurodesis',
+  'Thoracotomy',
+  'Rigid bronchoscopy',
+  'Coronary artery bypass graft',
+  'AVR',
+  'AVR + CABG',
+  'Diagnostic laparoscopy gynae',
+  'Caesarean section',
+  'Laparotomy + hysterectomy',
+  'Orchidopexy',
+  'Circumcision',
+  'Hypospadias repair',
+  'TURP',
+  'Ureteroscopy + laser',
+  'Rigid cystoscopy',
+  'Nephrectomy',
+  'Percutaneous nephrolithotomy',
+  'Radical prostatectomy',
+  'Dynamic hip screw',
+  'Cannulated hip screw',
+  'Hemiarthroplasty',
+  'Total hip replacement',
+  'Total knee replacement',
+  'ORIF distal radius',
+  'ORIF ankle',
+  'ORIF tibia',
+  'External fixator application',
+  'Washout open fracture',
+  'Below knee amputation',
+  'Above knee amputation',
+  'Bur hole evacuation',
+  'Craniotomy for trauma',
+  'Laminectomy',
+  'Microdiscectomy',
+  'Carotid endarterectomy',
+  'Split skin graft',
+  'Full thickness skin graft',
+  'Local flap reconstruction',
+  'Z-plasty',
+  'Dupuytren fasciectomy',
+  'Ganglion excision',
 ];
+
+const procedureMid = Math.ceil(procedureCloud.length / 2);
+const procedureTagsRow1 = procedureCloud.slice(0, procedureMid);
+const procedureTagsRow2 = procedureCloud.slice(procedureMid);
 
 const img = {
   heroPhone: '/assets/images/iphone.png',
@@ -29,6 +135,9 @@ const img = {
   caseEntry: '/assets/images/screenshot2.png',
   casesTable: '/assets/images/screenshot1.png',
 };
+
+/** Public GitHub repository (same origin as `git remote`). */
+const githubRepoUrl = 'https://github.com/nvx5/surgical-elogbook';
 ---
 
 <Layout title={title} description={description}>
@@ -40,7 +149,7 @@ const img = {
       <div class="pointer-events-none absolute left-1/2 top-0 h-96 w-[120%] -translate-x-1/2 rounded-[50%] bg-gradient-to-b from-clinical-100/50 to-transparent blur-3xl"></div>
       <div class="relative mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-10 sm:gap-12 sm:px-6 sm:pb-20 sm:pt-14 lg:grid-cols-2 lg:items-center">
         <div class="min-w-0">
-          <p class="text-xs font-bold uppercase tracking-[0.2em] text-clinical-600">Operative training</p>
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-clinical-600">FREE & OPEN-SOURCE</p>
           <h1 class="mt-3 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
             A logbook that keeps pace with theatre, not paperwork.
           </h1>
@@ -48,19 +157,22 @@ const img = {
             Capture procedures in seconds, keep trusts and roles consistent, then turn a date range into totals and a
             printable PDF, all without storing patient identifiable data.
           </p>
+          <p class="mt-4 max-w-xl text-base leading-relaxed text-slate-600">
+            Always free to use. Open source for teaching and transparency.
+          </p>
           <p class="mt-4 text-base font-semibold text-slate-800">Built by surgeons, for surgeons.</p>
           <div class="mt-8 flex flex-wrap gap-3">
             <a
               href="/app/"
               class="inline-flex items-center justify-center rounded-xl bg-clinical-600 px-6 py-3.5 text-base font-bold text-white shadow-card transition hover:bg-clinical-700 hover:shadow-card-hover"
             >
-              Open app, free
+              Open app
             </a>
             <a
-              href="/legal/"
+              href="/help/"
               class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-base font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
             >
-              Privacy & terms
+              Help
             </a>
           </div>
         </div>
@@ -114,47 +226,74 @@ const img = {
       </div>
     </section>
 
-    <!-- Feature grid (brand band) -->
-    <section class="bg-gradient-to-br from-clinical-600 via-clinical-700 to-clinical-900 py-16 text-white sm:py-20">
-      <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <h2 class="text-center text-3xl font-bold tracking-tight sm:text-4xl">Four jobs. One calm workflow.</h2>
-        <p class="mx-auto mt-3 max-w-2xl text-center text-lg text-white/85">
-          Designed around how surgical trainees actually work, not generic habit trackers bolted onto medicine.
+    <!-- Procedure cloud -->
+    <section class="about-procedure-marquee border-y border-slate-100 bg-surface-muted py-14 sm:py-20">
+      <div class="mx-auto max-w-6xl px-4 text-center sm:px-6">
+        <h2 class="text-2xl font-bold text-slate-900 sm:text-3xl">From common operations to subspecialty exposure</h2>
+        <p class="mx-auto mt-3 max-w-2xl text-slate-600">
+          Tag cases with the procedures you actually did. Custom tags are allowed, so when reviewers ask “what have you seen?”
+          the answer is already structured.
         </p>
-        <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:gap-6">
-          <article class="rounded-2xl border border-white/10 bg-white/10 p-6 backdrop-blur-sm">
-            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-xl font-bold">1</div>
-            <h3 class="mt-4 text-lg font-bold">Case logging</h3>
-            <p class="mt-2 text-sm leading-relaxed text-white/88">
-              Date, specialty, trust from the official NHS list, procedure tags, CEPOD, consultant, role, and notes only
-              when you need them, with clear warnings about identifiers.
-            </p>
-          </article>
-          <article class="rounded-2xl border border-white/10 bg-white/10 p-6 backdrop-blur-sm">
-            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-xl font-bold">2</div>
-            <h3 class="mt-4 text-lg font-bold">Consolidation reports</h3>
-            <p class="mt-2 text-sm leading-relaxed text-white/88">
-              Filter by date range and specialty, pick compact / normal / detailed PDF layouts, optional GMC & grade lines,
-              typography presets, and notes included automatically in detailed view.
-            </p>
-          </article>
-          <article class="rounded-2xl border border-white/10 bg-white/10 p-6 backdrop-blur-sm">
-            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-xl font-bold">3</div>
-            <h3 class="mt-4 text-lg font-bold">Portfolio ready rhythm</h3>
-            <p class="mt-2 text-sm leading-relaxed text-white/88">
-              CSV / JSON export from Settings when you need raw data; PDF sign off blocks for supervisors built into the
-              report footer.
-            </p>
-          </article>
-          <article class="rounded-2xl border border-white/10 bg-white/10 p-6 backdrop-blur-sm">
-            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-xl font-bold">4</div>
-            <h3 class="mt-4 text-lg font-bold">Privacy first by design</h3>
-            <p class="mt-2 text-sm leading-relaxed text-white/88">
-              No patient identifiers in the data model narrative; PDFs rendered locally in your browser. Read the full
-              policy anytime.
-              <a href="/legal/" class="font-semibold underline hover:no-underline">Legal centre</a>.
-            </p>
-          </article>
+      </div>
+
+      <div class="mx-auto mt-10 hidden max-w-6xl flex-col gap-4 px-4 motion-reduce:flex sm:px-6">
+        <div class="flex flex-wrap justify-center gap-2.5">
+          {
+            procedureTagsRow1.map((p) => (
+              <span class="rounded-full border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+                {p}
+              </span>
+            ))
+          }
+        </div>
+        <div class="flex flex-wrap justify-center gap-2.5">
+          {
+            procedureTagsRow2.map((p) => (
+              <span class="rounded-full border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+                {p}
+              </span>
+            ))
+          }
+        </div>
+      </div>
+
+      <div class="relative mt-10 w-full overflow-hidden py-2 motion-reduce:hidden">
+        <div
+          class="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-surface-muted to-transparent sm:w-20"
+          aria-hidden="true"
+        >
+        </div>
+        <div
+          class="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-surface-muted to-transparent sm:w-20"
+          aria-hidden="true"
+        >
+        </div>
+        <div class="flex flex-col gap-3">
+          {
+            [
+              { tags: procedureTagsRow1, variant: 'about-marquee-track-a' },
+              { tags: procedureTagsRow2, variant: 'about-marquee-track-b' },
+            ].map(({ tags, variant }) => (
+              <div class="overflow-hidden py-0.5">
+                <div class:list={['about-marquee-track flex w-max items-center', variant]}>
+                  {
+                    [0, 1].map((strip) => (
+                      <div
+                        class="flex shrink-0 items-center gap-2.5 pr-4 sm:gap-3"
+                        aria-hidden={strip === 1 ? true : undefined}
+                      >
+                        {tags.map((p) => (
+                          <span class="whitespace-nowrap rounded-full border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+                            {p}
+                          </span>
+                        ))}
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            ))
+          }
         </div>
       </div>
     </section>
@@ -165,8 +304,9 @@ const img = {
         <div class="order-2 lg:order-1">
           <h2 class="text-2xl font-bold text-slate-900 sm:text-3xl">Reports that respect your time</h2>
           <p class="mt-4 leading-relaxed text-slate-600">
-            Pick preset ranges (six months to all time), optional specialty filter, then tune fonts and whether to print GMC
-            or grade. Detailed layout adds a case by case list with notes where saved, ideal before an ARCP conversation.
+            Pick preset ranges (six months to all time), optional specialty filter, portrait or landscape, then tune fonts
+            and whether to print GMC or grade. PDFs use one standardized case table (date, specialty, trust, operation,
+            CEPOD, consultant, role — no notes column), then a consolidation page with case counts by specialty and role.
           </p>
         </div>
         <div class="order-1 lg:order-2">
@@ -204,22 +344,95 @@ const img = {
       </div>
     </section>
 
-    <!-- Procedure cloud -->
-    <section class="border-y border-slate-100 bg-surface-muted py-14 sm:py-20">
-      <div class="mx-auto max-w-6xl px-4 text-center sm:px-6">
-        <h2 class="text-2xl font-bold text-slate-900 sm:text-3xl">From common operations to subspecialty exposure</h2>
-        <p class="mx-auto mt-3 max-w-2xl text-slate-600">
-          Tag cases with the procedures you actually did. Custom tags are allowed, so when reviewers ask “what have you seen?”
-          the answer is already structured.
-        </p>
-        <div class="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-2 sm:gap-2.5">
-          {
-            procedureCloud.map((p) => (
-              <span class="rounded-full border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
-                {p}
-              </span>
-            ))
-          }
+    <!-- Transparency: stack & repository -->
+    <section class="border-y border-slate-200/70 bg-gradient-to-b from-slate-50 via-white to-clinical-50/30 py-16 sm:py-24">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-card">
+          <div class="border-b border-slate-100 bg-gradient-to-r from-clinical-600/5 via-white to-slate-50 px-6 py-10 sm:px-10 sm:py-12">
+            <div class="w-full min-w-0 text-center">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-clinical-600">Transparency</p>
+              <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                Open source means you can read the whole stack
+              </h2>
+              <p class="mt-4 max-w-none text-lg leading-relaxed text-slate-600 text-pretty">
+                There is no hidden “enterprise build.” What runs in production is built from this repository: the marketing
+                site, the interactive logbook, export logic, and the Supabase schema and server-side helpers we ship beside
+                it. If you are assessing the tool for yourself, your deanery, or an IT board, you can trace behaviour from UI
+                code through to database rules.
+              </p>
+              <div class="mt-8 flex flex-col items-center gap-3">
+                <a
+                  href={githubRepoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-slate-800"
+                >
+                  <svg class="h-5 w-5 shrink-0" viewBox="0 0 98 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path
+                      fill="currentColor"
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.897-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z"
+                    />
+                  </svg>
+                  View source on GitHub
+                </a>
+                <p class="max-w-xl px-2 text-sm leading-relaxed text-slate-500">
+                  Browse commits, file history, issues, and license terms alongside the code.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid gap-0 lg:grid-cols-3 lg:divide-x lg:divide-slate-100">
+            <article class="p-6 sm:p-8 lg:p-10">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-clinical-100 text-sm font-bold text-clinical-800">
+                UI
+              </div>
+              <h3 class="mt-5 text-lg font-bold text-slate-900">Frontend & build</h3>
+              <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                The site is an <strong class="font-semibold text-slate-800">Astro</strong> project with{' '}
+                <strong class="font-semibold text-slate-800">static HTML output</strong>,{' '}
+                <strong class="font-semibold text-slate-800">React</strong> for the authenticated logbook at{' '}
+                <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-800">/app</code>, and{' '}
+                <strong class="font-semibold text-slate-800">Tailwind CSS</strong> for styling. Marketing and legal pages live
+                alongside the app under <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-800">src/pages/</code>; the interactive UI is under{' '}
+                <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-800">src/app/</code>. Production builds use{' '}
+                <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-800">npm run build</code>{' '}
+                (Astro + Vite).
+              </p>
+            </article>
+            <article class="border-t border-slate-100 p-6 sm:p-8 lg:border-t-0 lg:p-10">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-clinical-100 text-sm font-bold text-clinical-800">
+                DB
+              </div>
+              <h3 class="mt-5 text-lg font-bold text-slate-900">Data, auth & exports</h3>
+              <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                Accounts and case data use <strong class="font-semibold text-slate-800">Supabase</strong> (Postgres plus Auth).
+                Row Level Security policies in the schema isolate each user&apos;s rows. The browser loads{' '}
+                <strong class="font-semibold text-slate-800">@supabase/supabase-js</strong> for queries and session handling.
+                PDF consolidation reports and CSV/JSON exports are generated{' '}
+                <strong class="font-semibold text-slate-800">in your browser</strong> in the normal app flow (for example via{' '}
+                <strong class="font-semibold text-slate-800">jsPDF</strong>), so export behaviour is visible in{' '}
+                <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-800">src/app/</code> rather than a black-box API.
+              </p>
+            </article>
+            <article class="border-t border-slate-100 p-6 sm:p-8 lg:border-t-0 lg:p-10">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-clinical-100 text-sm font-bold text-clinical-800">
+                API
+              </div>
+              <h3 class="mt-5 text-lg font-bold text-slate-900">Server-side pieces</h3>
+              <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                Anything that must run on the server ships in-repo under{' '}
+                <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-800">supabase/</code>: the canonical{' '}
+                <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-800">schema.sql</code>, focused SQL
+                patches alongside it, and <strong class="font-semibold text-slate-800">Edge Functions</strong> in{' '}
+                <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-xs text-slate-800">supabase/functions/</code>{' '}
+                (for example privileged flows such as account deletion). README notes deployment expectations (e.g. Cloudflare
+                Pages for the static site and Supabase for backend).
+              </p>
+            </article>
+          </div>
         </div>
       </div>
     </section>
@@ -236,9 +449,9 @@ const img = {
     <!-- CTA -->
     <section class="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-20">
       <div class="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-clinical-900 px-6 py-12 text-center text-white shadow-card sm:px-12 sm:py-14">
-        <h2 class="text-2xl font-bold sm:text-3xl">Start logging today. An account takes minutes.</h2>
+        <h2 class="text-2xl font-bold sm:text-3xl">Start logging today. An account takes seconds.</h2>
         <p class="mx-auto mt-3 max-w-xl text-white/85">
-          No credit card. Bring your deanery email or personal address, and do not paste identifiers into notes.
+          Always free. Bring your deanery email or personal address.
         </p>
         <div class="mt-8 flex flex-wrap justify-center gap-3">
           <a
@@ -259,4 +472,40 @@ const img = {
 
     <MarketingSiteFooter hideSecondaryNav={true} />
   </div>
+
+  <style is:global>
+    .about-procedure-marquee {
+      --about-marquee-duration: 80s;
+    }
+
+    @keyframes about-procedure-marquee-shift {
+      from {
+        transform: translate3d(0, 0, 0);
+      }
+      to {
+        transform: translate3d(-50%, 0, 0);
+      }
+    }
+
+    @keyframes about-procedure-marquee-shift-reverse {
+      from {
+        transform: translate3d(-50%, 0, 0);
+      }
+      to {
+        transform: translate3d(0, 0, 0);
+      }
+    }
+
+    .about-procedure-marquee .about-marquee-track {
+      will-change: transform;
+    }
+
+    .about-procedure-marquee .about-marquee-track-a {
+      animation: about-procedure-marquee-shift var(--about-marquee-duration) linear infinite;
+    }
+
+    .about-procedure-marquee .about-marquee-track-b {
+      animation: about-procedure-marquee-shift-reverse var(--about-marquee-duration) linear infinite;
+    }
+  </style>
 </Layout>
