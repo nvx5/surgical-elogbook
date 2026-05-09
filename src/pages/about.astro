@@ -2,6 +2,7 @@
 import Layout from '../components/Layout.astro';
 import MarketingNav from '../components/MarketingNav.astro';
 import MarketingSiteFooter from '../components/MarketingSiteFooter.astro';
+import { SITE_CONTACT_MAILTO } from '../site';
 
 const title = 'Surgical eLogbook';
 const description =
@@ -461,7 +462,7 @@ const githubRepoUrl = 'https://github.com/nvx5/surgical-elogbook';
             Launch Surgical eLogbook
           </a>
           <a
-            href="mailto:user6581@proton.me"
+            href={SITE_CONTACT_MAILTO}
             class="inline-flex rounded-xl border border-white/25 px-8 py-3.5 text-base font-semibold text-white transition hover:bg-white/10"
           >
             Email the team

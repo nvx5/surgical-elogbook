@@ -2,6 +2,7 @@
 import Layout from '../components/Layout.astro';
 import MarketingNav from '../components/MarketingNav.astro';
 import MarketingSiteFooter from '../components/MarketingSiteFooter.astro';
+import { SITE_CONTACT_EMAIL, SITE_CONTACT_MAILTO } from '../site';
 
 const title = 'Help';
 const description =
@@ -260,6 +261,10 @@ const cstPortfolioGuidanceUrl =
                 database; removing the underlying authentication account may depend on your operator’s configuration (see
                 deployment documentation).
               </p>
+              <p class="text-sm leading-relaxed text-slate-700">
+                For privacy questions or data requests, contact{' '}
+                <a href={SITE_CONTACT_MAILTO} class="font-semibold text-clinical-700 underline">{SITE_CONTACT_EMAIL}</a>.
+              </p>
               <h3 id="terms-of-use" class="scroll-mt-28 pt-4 text-lg font-bold text-slate-900">Terms of use</h3>
               <p class="text-sm leading-relaxed text-slate-700">
                 Surgical eLogbook is an educational and training logbook. It is not an official medical record, legal record of
@@ -293,10 +298,10 @@ const cstPortfolioGuidanceUrl =
             <p class="text-sm font-semibold uppercase tracking-wider text-white/80">Still unsure?</p>
             <p class="mt-2 text-lg font-bold">We’re happy to hear from trainees and trainers.</p>
             <a
-              href="mailto:user6581@proton.me"
+              href={SITE_CONTACT_MAILTO}
               class="mt-6 inline-flex rounded-xl bg-white px-6 py-3 text-sm font-bold text-clinical-800 shadow-sm transition hover:bg-clinical-50"
             >
-              user6581@proton.me
+              {SITE_CONTACT_EMAIL}
             </a>
           </div>
         </div>
