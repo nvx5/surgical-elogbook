@@ -404,6 +404,15 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 [functions.delete-auth-user]
 verify_jwt = true
 
+# Natural language → case form autofill via AIML API (requires AIML_API_KEY secret).
+# Deploy with: supabase functions deploy case-ai-autofill --project-ref <ref>
+#
+# IMPORTANT: verify_jwt must be false here. Browser CORS preflight sends OPTIONS without
+# Authorization; gateway JWT verification runs before this file and would block preflight
+# (opaque network/CORS error in Firefox). Session is still enforced inside the function.
+[functions.case-ai-autofill]
+verify_jwt = false
+
 # [experimental.pgdelta]
 # When enabled, pg-delta becomes the active engine for supported schema flows.
 # enabled = false

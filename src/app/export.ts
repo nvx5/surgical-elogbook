@@ -1,5 +1,6 @@
 import type { CaseRow, UserRow } from './types';
 import { formatConsultant, formatOperationTags, parseConsultant } from './utils';
+import { signatureFromCaseRow } from './consultantSignature';
 
 function escapeCsvCell(value: string): string {
   // Prevent CSV/Excel formula injection when exported files are opened in spreadsheet apps.
@@ -13,6 +14,8 @@ function escapeCsvCell(value: string): string {
 function caseRowToCsvLine(row: CaseRow): string {
   const op = formatOperationTags(row.operation);
   const cons = formatConsultant(parseConsultant(row.consultant));
+  const sig = signatureFromCaseRow(row);
+  const sigJson = sig ? JSON.stringify(sig) : '';
   const cols = [
     row.id,
     row.case_date,
@@ -23,6 +26,7 @@ function caseRowToCsvLine(row: CaseRow): string {
     cons,
     row.role,
     row.notes ?? '',
+    sigJson,
     row.created_at,
     row.updated_at,
   ];
@@ -30,7 +34,7 @@ function caseRowToCsvLine(row: CaseRow): string {
 }
 
 const CSV_HEADER =
-  'id,case_date,specialty,hospital,operation,cepod,consultant,role,notes,created_at,updated_at';
+  'id,case_date,specialty,hospital,operation,cepod,consultant,role,notes,consultant_signature_json,created_at,updated_at';
 
 export function casesToCsv(cases: CaseRow[]): string {
   const lines = cases.map(caseRowToCsvLine);

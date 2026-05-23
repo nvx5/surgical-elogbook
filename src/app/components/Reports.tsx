@@ -38,6 +38,7 @@ export function Reports({ supabase, prefs, grade }: Props) {
   const [includeGmc, setIncludeGmc] = useState(true);
   const [includeGrade, setIncludeGrade] = useState(true);
   const [includeConsolidationReport, setIncludeConsolidationReport] = useState(true);
+  const [includeConsultantSignaturesInTable, setIncludeConsultantSignaturesInTable] = useState(false);
   const [fontFamily, setFontFamily] = useState<ReportPdfFontFamily>('helvetica');
   const [fontSizePreset, setFontSizePreset] = useState<ReportPdfSizePreset>('medium');
   const [busy, setBusy] = useState(false);
@@ -106,6 +107,7 @@ export function Reports({ supabase, prefs, grade }: Props) {
         includeGmc,
         includeGrade,
         includeConsolidationReport,
+        includeConsultantSignaturesInTable,
         fontFamily,
         fontSizePreset,
         headerNotes,
@@ -290,6 +292,20 @@ export function Reports({ supabase, prefs, grade }: Props) {
                 <span className="block font-semibold text-slate-900">Include consolidation report</span>
                 <span className="mt-0.5 block text-xs font-normal text-slate-600">
                   Adds a separate page with case counts by specialty and role (when there are cases in the download).
+                </span>
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 px-3 py-2.5 text-sm transition has-[:checked]:border-clinical-500 has-[:checked]:bg-clinical-50">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-clinical-600 focus:ring-clinical-500"
+                checked={includeConsultantSignaturesInTable}
+                onChange={(e) => setIncludeConsultantSignaturesInTable(e.target.checked)}
+              />
+              <span className="min-w-0 leading-snug">
+                <span className="block font-semibold text-slate-900">Signatures column in case table</span>
+                <span className="mt-0.5 block text-xs font-normal text-slate-600">
+                  Adds a narrow “Sig” column with a miniature redraw beside each row (rows become taller).
                 </span>
               </span>
             </label>

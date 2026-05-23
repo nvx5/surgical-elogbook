@@ -47,6 +47,7 @@ create table public.cases (
   operation jsonb not null default '[]'::jsonb,
   cepod text,
   consultant jsonb,
+  consultant_signature jsonb,
   role text not null,
   notes text,
   created_at timestamptz not null default now(),
@@ -59,7 +60,10 @@ comment on column public.cases.specialty is 'Surgical specialty label (plain tex
 comment on column public.cases.operation is
   'JSON array of operation tags, e.g. ["laparotomy","adhesiolysis","hartmann''s"] — display as TAG1 + TAG2 + …';
 comment on column public.cases.consultant is
-  'JSON object: {"firstname":"…","lastname":"…","gmc":"…"}';
+  'JSON object: {"firstname":"…","lastname":"…","gmc":"…","signature":{…}?}. Optional vector strokes nested under signature (same shape as legacy consultant_signature).';
+
+comment on column public.cases.consultant_signature is
+  'Legacy duplicate of consultant.signature; prefer nested signature. Cleared when rows are saved from current app.';
 
 comment on column public.cases.hospital is
   'Optional UK hospital / trust site name from the app list; empty string if unset.';

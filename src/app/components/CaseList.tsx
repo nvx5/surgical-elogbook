@@ -15,6 +15,7 @@ import {
   type CaseListViewPrefs,
 } from '../storage';
 import type { CaseRow } from '../types';
+import { signatureFromCaseRow } from '../consultantSignature';
 import {
   formatCaseDateUK,
   formatConsultantInitials,
@@ -257,7 +258,17 @@ export function CaseList({ supabase, onEdit, onAddCase, profileError, onCaseCoun
                 {roleCepodParts.length > 0 ? (
                   <div className="text-sm text-slate-600">{roleCepodParts.join(' · ')}</div>
                 ) : null}
-                <div className="text-sm text-slate-600">{formatConsultantInitials(parseConsultant(c.consultant))}</div>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                  <span>{formatConsultantInitials(parseConsultant(c.consultant))}</span>
+                  {signatureFromCaseRow(c) ? (
+                    <span
+                      className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-800"
+                      title="Consultant signature on file"
+                    >
+                      Signed
+                    </span>
+                  ) : null}
+                </div>
                 <div className="mt-3 flex gap-2">
                   <button
                     type="button"
@@ -322,7 +333,17 @@ export function CaseList({ supabase, onEdit, onAddCase, profileError, onCaseCoun
                   </td>
                   {cols.cepod ? <td className="whitespace-nowrap px-3 py-2 text-slate-700">{c.cepod ?? '—'}</td> : null}
                   <td className="whitespace-nowrap px-3 py-2 font-medium text-slate-800">
-                    {formatConsultantInitials(parseConsultant(c.consultant))}
+                    <span className="inline-flex items-center gap-2">
+                      {formatConsultantInitials(parseConsultant(c.consultant))}
+                      {signatureFromCaseRow(c) ? (
+                        <abbr
+                          className="cursor-help rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-800 no-underline"
+                          title="Consultant signature on file"
+                        >
+                          Sig
+                        </abbr>
+                      ) : null}
+                    </span>
                   </td>
                   {cols.role ? <td className="px-3 py-2 text-slate-700">{c.role}</td> : null}
                   <td className="whitespace-nowrap px-3 py-2 text-right">

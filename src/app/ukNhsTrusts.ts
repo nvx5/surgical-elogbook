@@ -146,3 +146,32 @@ const _set = new Set(UK_NHS_TRUSTS.map((t) => t.toLowerCase()));
 export function isOfficialUkNhsTrustName(name: string): boolean {
   return _set.has(name.trim().toLowerCase());
 }
+
+/** Official casing from the list, or '' if not an exact match (ignoring case). */
+export function canonicalUkTrustName(name: string): string {
+  const nl = name.trim().toLowerCase();
+  return UK_NHS_TRUSTS.find((t) => t.toLowerCase() === nl) ?? '';
+}
+
+/**
+ * Maps free-text or shorthand trust names (e.g. from AI) onto the official list.
+ * Returns '' when nothing matches reliably.
+ */
+export function resolveUkTrustFromLooseName(loose: string): string {
+  const n = loose.trim().replace(/\s+/g, ' ');
+  if (!n) return '';
+  const nl = n.toLowerCase();
+  const ciExact = UK_NHS_TRUSTS.find((t) => t.toLowerCase() === nl);
+  if (ciExact) return ciExact;
+  const candidates = UK_NHS_TRUSTS.filter((t) => {
+    const tl = t.toLowerCase();
+    return tl.includes(nl) || nl.includes(tl);
+  });
+  if (candidates.length === 0) return '';
+  if (candidates.length === 1) return candidates[0];
+  const containedInNl = candidates
+    .filter((t) => nl.includes(t.toLowerCase()))
+    .sort((a, b) => b.length - a.length);
+  if (containedInNl.length >= 1) return containedInNl[0];
+  return candidates.sort((a, b) => a.length - b.length)[0];
+}

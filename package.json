@@ -12,6 +12,7 @@
   "dependencies": {
     "@astrojs/react": "^4.2.0",
     "@astrojs/tailwind": "^6.0.0",
+    "@phosphor-icons/react": "^2.1.10",
     "@supabase/supabase-js": "^2.49.1",
     "astro": "^5.7.0",
     "jspdf": "^2.5.2",

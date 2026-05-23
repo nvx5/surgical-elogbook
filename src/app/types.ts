@@ -26,11 +26,16 @@ export const defaultPreferences = (): Preferences => ({
   defaultSpecialty: DEFAULT_SURGICAL_SPECIALTY,
 });
 
-/** One saved consultant (public.users.consultants JSON array). */
+/** One saved consultant (public.users.consultants JSON array). Only firstname/lastname/gmc are persisted there. */
 export type ConsultantEntry = {
   firstname: string;
   lastname: string;
   gmc: string;
+  /**
+   * Optional vector signature on **case** rows (`cases.consultant` JSON only).
+   * Never copy into saved consultants; each case gets its own signature.
+   */
+  signature?: unknown;
 };
 
 /** public.users row */
@@ -54,9 +59,12 @@ export type CaseRow = {
   hospital?: string;
   operation: unknown;
   cepod: string | null;
+  /** `{ firstname, lastname, gmc, signature? }` — signature is nested JSON, not a separate column when saved by current clients. */
   consultant: unknown;
   role: string;
   notes: string | null;
+  /** Legacy duplicate storage; readers should prefer `consultant.signature`. */
+  consultant_signature?: unknown;
   created_at: string;
   updated_at: string;
 };

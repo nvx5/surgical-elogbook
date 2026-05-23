@@ -15,6 +15,7 @@ import {
   ROLES,
   SURGICAL_SPECIALTIES,
 } from '../constants';
+import { logAiAutofillConsoleSummary, mergeAiCasePatch, type AiCasePatch } from '../caseAiAutofill';
 import { clearCaseDraft, loadCaseDraft, saveCaseDraft } from '../storage';
 import type { CaseRow, ConsultantEntry, Preferences } from '../types';
 import {
@@ -26,8 +27,16 @@ import {
   validateNotes,
 } from '../utils';
 import { isOfficialUkNhsTrustName, UK_NHS_TRUSTS } from '../ukNhsTrusts';
+import {
+  clampSignatureForStorage,
+  consultantSignatureIsEmpty,
+  signatureFromCaseRow,
+  type ConsultantSignatureData,
+} from '../consultantSignature';
+import { CaseAiAssist } from './CaseAiAssist';
 import { Combobox } from './Combobox';
 import { ConsultantSavedPicker } from './ConsultantSavedPicker';
+import { ConsultantSignaturePad } from './ConsultantSignaturePad';
 import { DefaultPrefStar } from './DefaultPrefStar';
 
 type Props = {
@@ -134,7 +143,11 @@ export function CaseForm({
   const [form, setForm] = useState<FormState>(() =>
     editing ? rowToForm(editing, prefs) : { ...emptyForm(prefs, today), ...loadDraftSafe(prefs) },
   );
+  const [consultantSignature, setConsultantSignature] = useState<ConsultantSignatureData | null>(() =>
+    editing ? signatureFromCaseRow(editing) : null,
+  );
   const [error, setError] = useState<string | null>(null);
+  const [aiAssistWarnings, setAiAssistWarnings] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [prefsSaving, setPrefsSaving] = useState(false);
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -162,11 +175,19 @@ export function CaseForm({
     return list;
   }, [form.tagInput, form.operationTags, prefs.favouriteTags]);
 
+  /** Detect nested `consultant.signature` updates even if the case object identity is reused. */
+  const editingHydrateKey = useMemo(() => {
+    if (!editing) return '';
+    return `${editing.id}\0${JSON.stringify(editing.consultant)}\0${JSON.stringify(editing.consultant_signature)}`;
+  }, [editing]);
+
   useEffect(() => {
     if (editing) {
       setForm(rowToForm(editing, prefs));
+      setConsultantSignature(signatureFromCaseRow(editing));
       return;
     }
+    setConsultantSignature(null);
     const draft = loadDraftSafe(prefs);
     if (Object.keys(draft).length) {
       setForm((prev) => ({
@@ -178,7 +199,11 @@ export function CaseForm({
     } else {
       setForm(emptyForm(prefs, today));
     }
-  }, [editing, prefs, today]);
+  }, [editing, editingHydrateKey, prefs, today]);
+
+  useEffect(() => {
+    if (editing) setAiAssistWarnings(null);
+  }, [editing]);
 
   const scheduleDraftSave = useCallback((next: FormState) => {
     if (editing) return;
@@ -365,14 +390,23 @@ export function CaseForm({
     const cons = consultantPayload(form);
     const roleVal = canonicalRole(form.role) ?? ROLES[0];
     const notesVal = toNull(form.notes);
-    /** Full row for updates (must send nulls to clear optional fields). */
+    const signatureStored =
+      consultantSignature && !consultantSignatureIsEmpty(consultantSignature)
+        ? clampSignatureForStorage(consultantSignature)
+        : null;
+    const consultantWithSig =
+      cons &&
+      (signatureStored
+        ? { ...cons, signature: signatureStored }
+        : { firstname: cons.firstname, lastname: cons.lastname, gmc: cons.gmc });
+    /** Full row for updates — omit `consultant_signature`: many deployments only store strokes under `consultant.signature`. */
     const updatePayload = {
       case_date: form.case_date,
       specialty: specialtyVal,
       hospital: hosp,
       operation: form.operationTags,
       cepod: cepodVal,
-      consultant: cons,
+      consultant: consultantWithSig ?? cons,
       role: roleVal,
       notes: notesVal,
     };
@@ -390,7 +424,8 @@ export function CaseForm({
     };
     if (hosp) insertRow.hospital = hosp;
     insertRow.cepod = cepodVal;
-    if (cons) insertRow.consultant = cons;
+    if (consultantWithSig) insertRow.consultant = consultantWithSig;
+    else if (cons) insertRow.consultant = cons;
     try {
       if (editing) {
         const { error: err } = await supabase.from('cases').update(updatePayload).eq('id', editing.id);
@@ -403,6 +438,7 @@ export function CaseForm({
       clearCaseDraft();
       if (mode === 'another' && !editing) {
         setForm(emptyForm(prefs, today));
+        setConsultantSignature(null);
         setSaving(false);
         return;
       }
@@ -420,7 +456,29 @@ export function CaseForm({
       return;
     }
     setForm(rowToForm(lastCase, prefs));
+    setConsultantSignature(signatureFromCaseRow(lastCase));
     setError(null);
+    setAiAssistWarnings(null);
+  }
+
+  function applyAiPatch(patch: AiCasePatch) {
+    setError(null);
+    setForm((prev) => {
+      const r = mergeAiCasePatch(prev, patch, prefs);
+      logAiAutofillConsoleSummary({
+        patch,
+        prev,
+        next: r.next,
+        warnings: r.warnings,
+      });
+      const merged = { ...prev, ...r.next };
+      scheduleDraftSave(merged);
+      queueMicrotask(() => {
+        setAiAssistWarnings(r.warnings.length ? r.warnings : null);
+      });
+      return merged;
+    });
+    setConsultantSignature(null);
   }
 
   return (
@@ -446,6 +504,17 @@ export function CaseForm({
           ? 'Change any fields you need, then save. What you save replaces the earlier version of this entry.'
           : 'Log one procedure. Fields can copy from your most recent case or from saved preferences. Do not type patient identifiers into notes.'}
       </p>
+      {!editing ? <CaseAiAssist supabase={supabase} onApplyPatch={applyAiPatch} /> : null}
+      {aiAssistWarnings?.length ? (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-card" role="status">
+          <p className="font-semibold">Review these AI warnings</p>
+          <ul className="mt-2 list-inside list-disc space-y-1">
+            {aiAssistWarnings.map((w, i) => (
+              <li key={`${i}-${w}`}>{w}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {error ? (
         <p
           ref={errorBannerRef}
@@ -627,6 +696,7 @@ export function CaseForm({
               <ConsultantSavedPicker
                 consultants={savedConsultants}
                 onPick={(c) => {
+                  setConsultantSignature(null);
                   setForm((prev) => {
                     const next = {
                       ...prev,
@@ -678,6 +748,17 @@ export function CaseForm({
                 onChange={(e) => setField('cGmc', e.target.value)}
               />
             </div>
+          </div>
+          <div className="mt-4 rounded-xl border border-slate-200/90 bg-slate-50/60 px-3 py-3 sm:px-4">
+            <span className="text-sm font-semibold text-slate-700">Consultant signature</span>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              Optional. Hand the device to your consultant to sign here using a finger, stylus, or mouse. Use the Clear button to start over.
+            </p>
+            <ConsultantSignaturePad
+              key={editingHydrateKey || 'new-case'}
+              value={consultantSignature}
+              onChange={setConsultantSignature}
+            />
           </div>
         </div>
 

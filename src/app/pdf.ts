@@ -8,6 +8,7 @@ import {
   type ReportPdfLayout,
   type ReportPdfSizePreset,
 } from './constants';
+import { signatureFromCaseRow, type ConsultantSignatureData } from './consultantSignature';
 import type { CaseRow, Preferences } from './types';
 import {
   formatCaseDateUK,
@@ -43,6 +44,8 @@ export type ReportPdfOptions = {
   fontSizePreset: ReportPdfSizePreset;
   /** Extra summary page with counts by specialty and role (after the case list). Default true. */
   includeConsolidationReport?: boolean;
+  /** Miniature stroke column in the main case table (beside consultant). Default false. */
+  includeConsultantSignaturesInTable?: boolean;
   /** Extra lines printed after the period block (e.g. active filters). */
   headerNotes?: string[];
 };
@@ -182,6 +185,77 @@ function drawPdfGridRow(
   }
   doc.line(x0, y + h, x0 + tableWidth, y + h);
   return h;
+}
+
+/** Minimum body row height when the signature thumbnail column is enabled. */
+const CASE_TABLE_SIG_BODY_MIN_MM = 12.5;
+
+/** Body row with uniform height; stroke thumbnails only in `signature` columns. Borders drawn once (no stacked rects). */
+function drawPdfGridBodyRowMixed(
+  ctx: PdfContext,
+  x0: number,
+  y: number,
+  tableWidth: number,
+  colWidths: number[],
+  cols: Array<{ kind: 'text'; cell: (c: CaseRow) => string } | { kind: 'signature' }>,
+  caseRow: CaseRow,
+  cellLines: string[][],
+  rowHmm: number,
+  opts: { drawTopEdge: boolean; pad: number; bodySize: number },
+): number {
+  const { doc } = ctx;
+  const { drawTopEdge, pad, bodySize } = opts;
+  const lh = lineHeightMm(doc, bodySize);
+
+  doc.setDrawColor(...RGB_BORDER);
+  doc.setLineWidth(0.2);
+  if (drawTopEdge) {
+    doc.line(x0, y, x0 + tableWidth, y);
+  }
+
+  let bx = x0;
+  doc.line(bx, y, bx, y + rowHmm);
+  for (let j = 0; j < colWidths.length; j++) {
+    bx += colWidths[j]!;
+    doc.line(bx, y, bx, y + rowHmm);
+  }
+  doc.line(x0, y + rowHmm, x0 + tableWidth, y + rowHmm);
+
+  let x = x0;
+  for (let j = 0; j < colWidths.length; j++) {
+    const cw = colWidths[j]!;
+    const col = cols[j]!;
+    if (col.kind === 'text') {
+      doc.setFont(ctx.fontFamily, 'normal');
+      doc.setFontSize(bodySize);
+      doc.setTextColor(...RGB_SLATE);
+      let ty = y + pad + lh * 0.72;
+      for (const line of cellLines[j]!) {
+        doc.text(line, x + pad, ty);
+        ty += lh;
+      }
+    } else {
+      const inset = 0.65;
+      doc.setFillColor(...RGB_HEADER_BG);
+      doc.rect(x + inset, y + inset, cw - inset * 2, rowHmm - inset * 2, 'F');
+      const sig = signatureFromCaseRow(caseRow);
+      if (sig) {
+        drawConsultantSignatureStrokesInBox(
+          doc,
+          x + inset + 0.45,
+          y + inset + 0.45,
+          cw - inset * 2 - 0.9,
+          rowHmm - inset * 2 - 0.9,
+          sig,
+        );
+      }
+    }
+    x += cw;
+  }
+
+  doc.setDrawColor(...RGB_BORDER);
+  doc.setLineWidth(0.2);
+  return rowHmm;
 }
 
 type PdfContext = {
@@ -456,13 +530,16 @@ function measureSignOffReserveMm(ctx: PdfContext): number {
   return computeSignOffLayout(ctx).totalMm + 2;
 }
 
-type TableCol = { w: number; header: string; cell: (c: CaseRow) => string };
+type CaseTableCol =
+  | { w: number; header: string; kind: 'text'; cell: (c: CaseRow) => string }
+  | { w: number; header: string; kind: 'signature' };
 
 type CaseTableColumnFlags = {
   includeNotes: boolean;
   includeTrust: boolean;
   includeSpecialty: boolean;
   includeCepod: boolean;
+  includeConsultantSignatureColumn?: boolean;
 };
 
 /** Standard consolidation table: date, specialty, trust, operation, CEPOD, consultant, role — no notes. */
@@ -471,36 +548,56 @@ const STANDARD_REPORT_COLUMN_FLAGS: CaseTableColumnFlags = {
   includeTrust: true,
   includeSpecialty: true,
   includeCepod: true,
+  includeConsultantSignatureColumn: false,
 };
 
-function buildCaseTableColumns(tableWidth: number, flags: CaseTableColumnFlags): TableCol[] {
-  const { includeNotes, includeTrust, includeSpecialty, includeCepod } = flags;
+function buildCaseTableColumns(tableWidth: number, flags: CaseTableColumnFlags): CaseTableCol[] {
+  const { includeNotes, includeTrust, includeSpecialty, includeCepod, includeConsultantSignatureColumn } = flags;
   const compactish = !includeTrust && !includeSpecialty && !includeCepod && !includeNotes;
   const opW = includeNotes ? 55 : compactish ? 100 : includeTrust ? 72 : 80;
-  const rel: TableCol[] = [{ w: 22, header: 'Date', cell: (c: CaseRow) => formatCaseDateUK(c.case_date) }];
+  const rel: CaseTableCol[] = [
+    { w: 22, header: 'Date', kind: 'text', cell: (c: CaseRow) => formatCaseDateUK(c.case_date) },
+  ];
   if (includeSpecialty) {
     rel.push({
       w: 28,
       header: 'Specialty',
+      kind: 'text',
       cell: (c: CaseRow) => tableSpecialtyLabel(c),
     });
   }
   if (includeTrust) {
-    rel.push({ w: 36, header: 'Trust', cell: (c: CaseRow) => c.hospital?.trim() || '—' });
+    rel.push({ w: 36, header: 'Trust', kind: 'text', cell: (c: CaseRow) => c.hospital?.trim() || '—' });
   }
-  rel.push({ w: opW, header: 'Operation', cell: (c: CaseRow) => formatOperationTags(c.operation) });
+  rel.push({
+    w: opW,
+    header: 'Operation',
+    kind: 'text',
+    cell: (c: CaseRow) => formatOperationTags(c.operation),
+  });
   if (includeCepod) {
-    rel.push({ w: 18, header: 'CEPOD', cell: (c: CaseRow) => c.cepod?.trim() || '—' });
+    rel.push({ w: 18, header: 'CEPOD', kind: 'text', cell: (c: CaseRow) => c.cepod?.trim() || '—' });
   }
-  rel.push(
-    { w: 38, header: 'Consultant', cell: (c: CaseRow) => formatConsultant(parseConsultant(c.consultant)) },
-    { w: 22, header: 'Role', cell: (c: CaseRow) => c.role?.trim() || '—' },
-  );
+  rel.push({
+    w: 38,
+    header: 'Consultant',
+    kind: 'text',
+    cell: (c: CaseRow) => formatConsultant(parseConsultant(c.consultant)),
+  });
+  if (includeConsultantSignatureColumn) {
+    rel.push({ w: 18, header: 'Sig', kind: 'signature' });
+  }
+  rel.push({ w: 22, header: 'Role', kind: 'text', cell: (c: CaseRow) => c.role?.trim() || '—' });
   if (includeNotes) {
-    rel.push({ w: 47, header: 'Notes', cell: (c: CaseRow) => (c.notes?.trim() ? c.notes.trim() : '—') });
+    rel.push({
+      w: 47,
+      header: 'Notes',
+      kind: 'text',
+      cell: (c: CaseRow) => (c.notes?.trim() ? c.notes.trim() : '—'),
+    });
   }
   const sum = rel.reduce((a, x) => a + x.w, 0);
-  const scaled = rel.map((x) => ({ w: (x.w / sum) * tableWidth, header: x.header, cell: x.cell }));
+  const scaled = rel.map((x) => ({ ...x, w: (x.w / sum) * tableWidth }));
   const drift = tableWidth - scaled.reduce((a, c) => a + c.w, 0);
   scaled[scaled.length - 1]!.w += drift;
   return scaled;
@@ -546,19 +643,79 @@ function drawCaseTable(
   }
   y += drawRow(headLines, true, true);
 
+  const mixedSigColumn = cols.some((col) => col.kind === 'signature');
+
   doc.setFont(ctx.fontFamily, 'normal');
   for (const c of cases) {
     doc.setFontSize(bodySize);
-    const cellStr = cols.map((col) => col.cell(c));
-    const cellLines = cols.map((col, i) => doc.splitTextToSize(cellStr[i]!, col.w - pad * 2));
-    const rh = rowHeight(cellLines, false);
+    const cellLines = cols.map((col, i) =>
+      col.kind === 'text'
+        ? doc.splitTextToSize(col.cell(c), colWidths[i]! - pad * 2)
+        : [''],
+    );
+    const textRh = rowHeight(cellLines, false);
+    const rh = mixedSigColumn ? Math.max(textRh, CASE_TABLE_SIG_BODY_MIN_MM) : textRh;
     if (y + rh > maxBottom) {
       y = newPage(ctx);
     }
-    y += drawRow(cellLines, false, false);
+    if (mixedSigColumn) {
+      const colKinds = cols.map((col) =>
+        col.kind === 'text' ? ({ kind: 'text' as const, cell: col.cell }) : ({ kind: 'signature' as const }),
+      );
+      y += drawPdfGridBodyRowMixed(ctx, x0, y, tableWidth, colWidths, colKinds, c, cellLines, rh, {
+        drawTopEdge: false,
+        pad,
+        bodySize,
+      });
+    } else {
+      y += drawRow(cellLines, false, false);
+    }
   }
 
   return y;
+}
+
+function drawConsultantSignatureStrokesInBox(
+  doc: jsPDF,
+  leftMm: number,
+  topMm: number,
+  boxWMm: number,
+  boxHMm: number,
+  data: ConsultantSignatureData,
+): void {
+  doc.setDrawColor(...RGB_SLATE);
+  doc.setLineWidth(0.35);
+  try {
+    doc.setLineCap('round');
+    doc.setLineJoin('round');
+  } catch {
+    /* older jsPDF builds may omit caps API */
+  }
+
+  for (const stroke of data.strokes) {
+    if (stroke.length === 0) continue;
+    if (stroke.length === 1) {
+      const p = stroke[0]!;
+      const x = leftMm + p.x * boxWMm;
+      const y = topMm + p.y * boxHMm;
+      doc.circle(x, y, 0.55, 'S');
+      continue;
+    }
+    for (let i = 1; i < stroke.length; i++) {
+      const a = stroke[i - 1]!;
+      const b = stroke[i]!;
+      doc.line(leftMm + a.x * boxWMm, topMm + a.y * boxHMm, leftMm + b.x * boxWMm, topMm + b.y * boxHMm);
+    }
+  }
+
+  doc.setDrawColor(...RGB_BORDER);
+  doc.setLineWidth(0.2);
+  try {
+    doc.setLineCap('butt');
+    doc.setLineJoin('miter');
+  } catch {
+    /* ignore */
+  }
 }
 
 /**
@@ -818,6 +975,7 @@ export function buildTrainingReportPdf(opts: ReportPdfOptions): void {
     fontFamily,
     fontSizePreset,
     includeConsolidationReport = true,
+    includeConsultantSignaturesInTable = false,
     headerNotes = [],
   } = opts;
   const filtered = cases.filter((c) => inRange(c, dateFrom, dateTo));
@@ -847,7 +1005,10 @@ export function buildTrainingReportPdf(opts: ReportPdfOptions): void {
     y = newPage(ctx);
   }
   const tableW = pageW - margin * 2;
-  drawCaseTable(ctx, sorted, y, tableW, STANDARD_REPORT_COLUMN_FLAGS, signOffReserveMm);
+  y = drawCaseTable(ctx, sorted, y, tableW, {
+    ...STANDARD_REPORT_COLUMN_FLAGS,
+    includeConsultantSignatureColumn: includeConsultantSignaturesInTable,
+  }, signOffReserveMm);
 
   if (includeConsolidationReport && sorted.length > 0) {
     const yConsolidation = newPage(ctx);

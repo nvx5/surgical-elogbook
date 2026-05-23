@@ -5,6 +5,7 @@ import {
   NAME_TITLES,
   NOTES_MAX_LENGTH,
 } from './constants';
+import { unwrapCaseJson } from './consultantSignature';
 import type { ConsultantEntry, Preferences } from './types';
 import { defaultPreferences } from './types';
 
@@ -161,8 +162,9 @@ export function formatOperationTags(raw: unknown): string {
 }
 
 export function parseConsultant(raw: unknown): ConsultantEntry | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const o = raw as Record<string, unknown>;
+  const rawObj = unwrapCaseJson(raw);
+  if (!rawObj || typeof rawObj !== 'object') return null;
+  const o = rawObj as Record<string, unknown>;
   const firstname = typeof o.firstname === 'string' ? o.firstname.trim() : '';
   const lastname = typeof o.lastname === 'string' ? o.lastname.trim() : '';
   const gmc = typeof o.gmc === 'string' ? o.gmc.trim() : '';
