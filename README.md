@@ -1,12 +1,13 @@
 <div align="center">
-  
-  ## Surgical eLogbook
+  <img width="1640" height="300" alt="New Project(25)" src="https://github.com/user-attachments/assets/b1876b52-c0f4-4622-9562-4f01081fbcc0" />
 
-  An operative training logbook. Capture cases in seconds, filter your experience, and generate portfolio-ready PDF reports without uploading patient data.
-
-  [![Open app](https://img.shields.io/static/v1?label=&message=Open+app&color=0369a1&style=for-the-badge)](https://surgicalelogbook.com)
-  
 </div>
+
+### 🧩 Project Information
+
+An experimental digital surgical logbook developed to explore the role of AI-assisted software development in streamlining operative case documentation, experience tracking and portfolio reporting. The project forms part of a wider research paper examining the potential and limitations of AI in developing practical tools for medical training, with a focus on usability, data privacy and clinical workflow integration.
+
+### 📸 Screenshots
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/e8ee0b82-ff97-4e69-a9b4-2e307b919d1e" width="75%" alt="Surgical eLogbook case form">
@@ -26,8 +27,7 @@
 
 <br>
 
-<div align="center">
+### 🤝 Contributing
   
-  This is a finished open-source project, developed as part of ongoing research intended for publication. Contributions, issues, and feature requests are welcome.
-  
-</div>
+This is a finished open-source project, developed as part of ongoing research intended for publication. Contributions, issues, and feature requests are welcome.
+
